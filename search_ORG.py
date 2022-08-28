@@ -56,16 +56,16 @@ def tunnel():
         main_tunnel = subprocess.Popen("aws_rds_tunnel production 9000", shell=True, executable="/bin/zsh",stdout=subprocess.PIPE)
         search_val = "localhost:9000".encode()
         for line in main_tunnel.stdout:
-            if search_val in line: 
+            if search_val in line:
                 print(bcolors.OKBLUE + "Established tunnel to production environment US" + bcolors.ENDC)
                 break
-    need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    need_tunnel_out, err = need_tunnel_9000.communicate()
-    need = "localhost:cslistener (LISTEN)".encode()
-    while need not in need_tunnel_out:
         need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         need_tunnel_out, err = need_tunnel_9000.communicate()
-        time.sleep(1)
+        need = "localhost:cslistener (LISTEN)".encode()
+        while need not in need_tunnel_out:
+            need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            need_tunnel_out, err = need_tunnel_9000.communicate()
+            time.sleep(1)
 
     need_tunnel_9001 = subprocess.Popen("netstat -an | grep 9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     need_tunnel_out, err = need_tunnel_9001.communicate()
@@ -76,16 +76,16 @@ def tunnel():
         eu_tunnel = subprocess.Popen("aws_rds_tunnel production 9001 --region eu-central-1", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
         search_val = "localhost:9001".encode()
         for line in eu_tunnel.stdout:
-            if search_val in line: 
+            if search_val in line:
                 print(bcolors.OKBLUE + "Established tunnel to production environment EU" + bcolors.ENDC)
                 break
-    need_tunnel_9001 = subprocess.Popen("lsof -i :9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    need_tunnel_out, err = need_tunnel_9001.communicate()
-    need = "localhost:etlservicemgr (LISTEN)".encode()
-    while need not in need_tunnel_out:
         need_tunnel_9001 = subprocess.Popen("lsof -i :9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         need_tunnel_out, err = need_tunnel_9001.communicate()
-        time.sleep(1)
+        need = "localhost:etlservicemgr (LISTEN)".encode()
+        while need not in need_tunnel_out:
+            need_tunnel_9001 = subprocess.Popen("lsof -i :9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            need_tunnel_out, err = need_tunnel_9001.communicate()
+            time.sleep(1)
 
     need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     need_tunnel_out, err = need_tunnel_9002.communicate()
@@ -96,16 +96,16 @@ def tunnel():
         ap_tunnel = subprocess.Popen("aws_rds_tunnel production 9002 --region ap-southeast-2", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE) 
         search_val = "localhost:9002".encode()
         for line in ap_tunnel.stdout:
-            if search_val in line: 
+            if search_val in line:
                 print(bcolors.OKBLUE + "Established tunnel to production environment AU" + bcolors.ENDC + "\n")
                 break
-    need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    need_tunnel_out, err = need_tunnel_9002.communicate()
-    need = "localhost:dynamid (LISTEN)".encode()
-    while need not in need_tunnel_out:
         need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         need_tunnel_out, err = need_tunnel_9002.communicate()
-        time.sleep(1)
+        need = "localhost:dynamid (LISTEN)".encode()
+        while need not in need_tunnel_out:
+            need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            need_tunnel_out, err = need_tunnel_9002.communicate()
+            time.sleep(1)
 
 
 class ApiDB:
