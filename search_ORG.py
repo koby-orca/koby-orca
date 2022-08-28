@@ -59,6 +59,13 @@ def tunnel():
             if search_val in line: 
                 print(bcolors.OKBLUE + "Established tunnel to production environment US" + bcolors.ENDC)
                 break
+    need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    need_tunnel_out, err = need_tunnel_9001.communicate()
+    need = "localhost:cslistener (LISTEN)".encode()
+    while need not in need_tunnel_out:
+        need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        need_tunnel_out, err = need_tunnel_9000.communicate()
+        time.sleep(1)
 
     need_tunnel_9001 = subprocess.Popen("netstat -an | grep 9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     need_tunnel_out, err = need_tunnel_9001.communicate()
@@ -72,6 +79,13 @@ def tunnel():
             if search_val in line: 
                 print(bcolors.OKBLUE + "Established tunnel to production environment EU" + bcolors.ENDC)
                 break
+    need_tunnel_9001 = subprocess.Popen("lsof -i :9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    need_tunnel_out, err = need_tunnel_9001.communicate()
+    need = "localhost:etlservicemgr (LISTEN)".encode()
+    while need not in need_tunnel_out:
+        need_tunnel_9001 = subprocess.Popen("lsof -i :9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        need_tunnel_out, err = need_tunnel_9001.communicate()
+        time.sleep(1)
 
     need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     need_tunnel_out, err = need_tunnel_9002.communicate()
@@ -91,7 +105,7 @@ def tunnel():
     while need not in need_tunnel_out:
         need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         need_tunnel_out, err = need_tunnel_9002.communicate()
-        time.sleep(2)
+        time.sleep(1)
 
 
 class ApiDB:
