@@ -60,7 +60,7 @@ def tunnel():
                 print(bcolors.OKBLUE + "Established tunnel to production environment US" + bcolors.ENDC)
                 break
     need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    need_tunnel_out, err = need_tunnel_9001.communicate()
+    need_tunnel_out, err = need_tunnel_9000.communicate()
     need = "localhost:cslistener (LISTEN)".encode()
     while need not in need_tunnel_out:
         need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
