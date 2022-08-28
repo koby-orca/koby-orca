@@ -290,6 +290,24 @@ if __name__ == "__main__":
             display(df3)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)
 
+    if args.invite:
+        tunnel()
+        invite_str = invite_search[0]
+        df4 = ApiDB().query_all_regions(
+            query=f"""select email,organization_id,issue_date,'{orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite WHERE lower(original_email) like '%{invite_str}%' limit 20"""
+        )
+        if df4.empty:
+            print(bcolors.FAIL + "No Invite Found" + bcolors.ENDC)
+            exit()
+        else:
+            html = df4.to_html()
+            text_file = open(f"{file}", "a+")
+            text_file.write(html)
+            text_file.close()
+            print(bcolors.OKBLUE + "We found Invite in our search" + bcolors.ENDC)
+            display(df4)
+            print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)
+
     if args.aws_conf:
         provider_str = provider_id[0]
         df7 = ApiDB().query_all_regions(
