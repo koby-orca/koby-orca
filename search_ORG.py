@@ -150,7 +150,7 @@ class ApiDB:
             elif port == 9002:
                 df = self.query_api_db_ap(query, port=port)
                 df["region"] = "ap"
-            ret = ret.append(df, ignore_index=True)
+            ret = pd.concat([ret, df], ignore_index=True)
         return ret
 
 
