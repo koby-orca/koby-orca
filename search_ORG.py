@@ -1,7 +1,8 @@
 import pandas as pd
-import psycopg2, argparse, os, subprocess, json,csv,time
+import psycopg2, argparse, os, subprocess, json,csv,time,sys
 from IPython.display import display
 from pathlib import Path
+from subprocess import check_output
 import warnings
 
 #remove FutureWarrning text
@@ -44,16 +45,46 @@ def aws_connect():
     if token in out:
         open_tunnel = subprocess.Popen("aws sso login", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT).wait()
 
+
 def tunnel():
     config_bastion()
-    #check if tunnels are already opened: 
+    
+
+    #configure max time for Tunnels to be opened
+    max_time = "12:00:00"
+
+    # check if tunnels are opened in case tunnels are open more then max_time, the tunnel will be reset
+
     need_tunnel_9000 = subprocess.Popen("netstat -an | grep 9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     need_tunnel_out, err = need_tunnel_9000.communicate()
     need = "127.0.0.1.9000".encode()
     if need in need_tunnel_out:
-        pass
+        get_pid_tun_1 = subprocess.Popen(
+            "lsof -i :9000 | grep 'localhost:cslistener (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'", shell=True,
+            executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out_1, err = get_pid_tun_1.communicate()
+        pid_1_str = out_1.decode()
+        pid_1 = pid_1_str[:-1]
+        time_tun_1 = subprocess.Popen(f"ps -o etime {pid_1} | grep -v 'ELAPSED'", shell=True, executable="/bin/zsh",
+                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out_time_1, err = time_tun_1.communicate()
+        out_time_1_str = out_time_1.decode()
+
+        time_pid_1 = out_time_1_str[:-1]
+        if time_pid_1 > max_time:
+            kill_pid_1 = subprocess.Popen(f"kill -9 {pid_1}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            out_pid_1, err = kill_pid_1.communicate()
+            main_tunnel = subprocess.Popen("aws_rds_tunnel production 9000", shell=True, executable="/bin/zsh",
+                                           stdout=subprocess.PIPE)
+            search_val = "localhost:9000".encode()
+            for line in main_tunnel.stdout:
+                if search_val in line:
+                    print(bcolors.OKBLUE + "Established tunnel to production environment US" + bcolors.ENDC)
+                    break
+        else:
+            pass
     else:
-        main_tunnel = subprocess.Popen("aws_rds_tunnel production 9000", shell=True, executable="/bin/zsh",stdout=subprocess.PIPE)
+        main_tunnel = subprocess.Popen("aws_rds_tunnel production 9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
         search_val = "localhost:9000".encode()
         for line in main_tunnel.stdout:
             if search_val in line:
@@ -64,7 +95,24 @@ def tunnel():
     need_tunnel_out, err = need_tunnel_9001.communicate()
     need = "127.0.0.1.9001".encode()
     if need in need_tunnel_out:
-        pass
+        get_pid_tun_2 = subprocess.Popen("lsof -i :9001 | grep 'localhost:etlservicemgr (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out_2, err = get_pid_tun_2.communicate()
+        pid_2_str = out_2.decode()
+        pid_2 = pid_2_str[:-1]
+        time_tun_2 = subprocess.Popen(f"ps -o etime {pid_2} | grep -v 'ELAPSED'", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out_time_2, err = time_tun_2.communicate()
+        out_time_2_str = out_time_2.decode()
+
+        time_pid_2 = out_time_2_str[:-1]
+        if time_pid_2 > max_time:
+            kill_pid_2 = subprocess.Popen(f"kill -9 {pid_2}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            out_pid_2, err = kill_pid_2.communicate()
+            eu_tunnel = subprocess.Popen("aws_rds_tunnel production 9001 --region eu-central-1", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+            search_val = "localhost:9001".encode()
+            for line in eu_tunnel.stdout:
+                if search_val in line:
+                    print(bcolors.OKBLUE + "Established tunnel to production environment EU" + bcolors.ENDC)
+                    break
     else:
         eu_tunnel = subprocess.Popen("aws_rds_tunnel production 9001 --region eu-central-1", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
         search_val = "localhost:9001".encode()
@@ -73,12 +121,29 @@ def tunnel():
                 print(bcolors.OKBLUE + "Established tunnel to production environment EU" + bcolors.ENDC)
                 break
 
-
     need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     need_tunnel_out, err = need_tunnel_9002.communicate()
     need = "localhost:dynamid (LISTEN)".encode()
     if need in need_tunnel_out:
-        pass
+        get_pid_tun_3 = subprocess.Popen(
+            "lsof -i :9002 | grep 'localhost:dynamid (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out_3, err = get_pid_tun_3.communicate()
+        pid_3_str = out_3.decode()
+        pid_3 = pid_3_str[:-1]
+        time_tun_3 = subprocess.Popen(f"ps -o etime {pid_3} | grep -v 'ELAPSED'", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out_time_3, err = time_tun_3.communicate()
+        out_time_3_str = out_time_3.decode()
+
+        time_pid_3 = out_time_3_str[:-1]
+        if time_pid_3 > max_time:
+            kill_pid_3 = subprocess.Popen(f"kill -9 {pid_3}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            out_pid_3, err = kill_pid_3.communicate()
+            ap_tunnel = subprocess.Popen("aws_rds_tunnel production 9002 --region ap-southeast-2", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+            search_val = "localhost:9002".encode()
+            for line in ap_tunnel.stdout:
+                if search_val in line:
+                    print(bcolors.OKBLUE + "Established tunnel to production environment AU" + bcolors.ENDC + "\n")
+                    break
     else:
         ap_tunnel = subprocess.Popen("aws_rds_tunnel production 9002 --region ap-southeast-2", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE) 
         search_val = "localhost:9002".encode()
@@ -87,6 +152,7 @@ def tunnel():
                 print(bcolors.OKBLUE + "Established tunnel to production environment AU" + bcolors.ENDC + "\n")
                 break
 
+    # make sure all tunnels are up and running 
     need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     need_tunnel_out, err = need_tunnel_9000.communicate()
     need = "localhost:cslistener (LISTEN)".encode()
@@ -114,8 +180,6 @@ def tunnel():
 
 class ApiDB:
 
-
-   
     def query_api_db(self, query, port):
         vals = get_val(home_folder+"/.secret/secrets.json")
         user = vals['user'] 
