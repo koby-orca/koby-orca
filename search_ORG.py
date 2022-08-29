@@ -245,6 +245,7 @@ if __name__ == "__main__":
     parser.add_argument("-org_name", help="org_name will search for the Organization by Name in DB", nargs=1, metavar=('organization_name'))
     parser.add_argument("-org_id", help="org_id will search for the Organization by ID in DB, must use the full organization ID", nargs=1, metavar=('organization_id'))
     parser.add_argument("-prov_id", help="prov_id will search for the Account by ID in DB, must use the full provider ID/Project Name", nargs=1, metavar=('provider_id'))
+    parser.add_argument("-cloudaccount", help="user will search for any User in DB", nargs=1, metavar=('cloudaccount_id'))
     parser.add_argument("-user", help="user will search for any User in DB", nargs=1, metavar=('email_address'))
     parser.add_argument("-precet", help="precet will search any Precet in DB", nargs=1, metavar=('org_name'))
     parser.add_argument("-invite", help="invite will search any Invite with a specific email in DB", nargs=1, metavar=('email_address'))
@@ -263,7 +264,7 @@ if __name__ == "__main__":
     cloudaccount_search = getattr(args, "prov_id")
     provider_id = getattr(args, "aws_conf")
     gcp_id = getattr(args, "gcp_conf")
-
+    cloudaccount_id_search = getattr(args, "cloudaccount")
 
     #global variables
 
@@ -322,8 +323,7 @@ if __name__ == "__main__":
 
     if args.prov_id:
         cloudaccount_str = cloudaccount_search[0]
-        df6 = ApiDB().query_all_regions(
-            query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{cloudaccount_str}' limit 20"""
+        df6 = ApiDB().query_all_regions(query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info,api_cloudaccount.management_account_id,api_cloudaccount.allowed_regions from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{cloudaccount_str}' limit 20"""
         )
         if df6.empty:
             print(bcolors.FAIL + "No CloudAccount Found with provided ID" + bcolors.ENDC)
@@ -353,6 +353,24 @@ if __name__ == "__main__":
             print(bcolors.OKBLUE + "We found Precet in our search" + bcolors.ENDC)
             display(df2)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)           
+
+    if args.cloudaccount:
+        cloudaccount_id_str = cloudaccount_id_search[0]
+        # need to confirm that orgID_str is per UUID example - 7c9ee3e1-bbea-447f-853c-c53b9b190240
+        df10 = ApiDB().query_all_regions(
+            query=f"""select name,id,cloud_provider_id,created_time from api_cloudaccount where (id) = '{cloudaccount_id_str}' limit 20"""
+        )
+        if df10.empty:
+            print(bcolors.FAIL + "No CloudAccount ID Found with provided ID" + bcolors.ENDC)
+            exit()
+        else:
+            html = df10.to_html()
+            text_file = open(f"{file}", "a+")
+            text_file.write(html)
+            text_file.close()
+            print(bcolors.OKBLUE + "We found CloudAccount ID in our search" + bcolors.ENDC)
+            display(df10)
+            print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)
 
     if args.user:
         user_str = user_search[0]
