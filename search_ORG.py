@@ -243,7 +243,7 @@ if __name__ == "__main__":
     parser.add_argument("-org_name", help="org_name will search for the Organization by Name in DB", nargs=1, metavar=('organization_name'))
     parser.add_argument("-org_id", help="org_id will search for the Organization by ID in DB, must use the full organization ID", nargs=1, metavar=('organization_id'))
     parser.add_argument("-prov_id", help="prov_id will search for the Account by ID in DB, must use the full provider ID/Project Name", nargs=1, metavar=('provider_id'))
-    parser.add_argument("-cloudaccount", help="user will search for any User in DB", nargs=1, metavar=('cloudaccount_id'))
+    parser.add_argument("-cloudaccount", help="Find the CloudAccount via the Orca cloudaccount_id", nargs=1, metavar=('cloudaccount_id'))
     parser.add_argument("-user", help="user will search for any User in DB", nargs=1, metavar=('email_address'))
     parser.add_argument("-precet", help="precet will search any Precet in DB", nargs=1, metavar=('org_name'))
     parser.add_argument("-invite", help="invite will search any Invite with a specific email in DB", nargs=1, metavar=('email_address'))
