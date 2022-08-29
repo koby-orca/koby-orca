@@ -51,7 +51,7 @@ def tunnel():
     
 
     #configure max time for Tunnels to be opened
-    max_time = "12:00:00"
+    max_time = "08:00:00"
 
     # check if tunnels are opened in case tunnels are open more then max_time, the tunnel will be reset
 
