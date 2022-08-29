@@ -209,8 +209,9 @@ class ApiDB:
         return df
 
     def query_all_regions(self, query, regions="all"):
-
-            
+        aws_connect()
+        tunnel()
+          
         ports = []
         if regions == "all":
             ports = [9000, 9001, 9002]
@@ -236,9 +237,6 @@ class ApiDB:
 
 
 if __name__ == "__main__":
-    
-    aws_connect()
-    tunnel()
     
     parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
 
