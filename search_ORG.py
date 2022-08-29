@@ -1,5 +1,5 @@
 import pandas as pd
-import psycopg2, argparse, os, subprocess, json,csv,time,sys
+import psycopg2, argparse, os, subprocess, json,csv,time,sys,re
 from IPython.display import display
 from pathlib import Path
 from subprocess import check_output
@@ -304,20 +304,23 @@ if __name__ == "__main__":
         tunnel()
         orgID_str = orgID_search[0]
         # need to confirm that orgID_str is per UUID example - 7c9ee3e1-bbea-447f-853c-c53b9b190240
-        df5 = ApiDB().query_all_regions(
-            query=f"""select name,id,customer_type from api_organization where (id) = '{orgID_str}' limit 20"""
-        )
-        if df5.empty:
-            print(bcolors.FAIL + "No Organization Found with provided ID" + bcolors.ENDC)
-            exit()
+        if not re.match(r"^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$",orgID_str):
+            print(bcolors.FAIL + "UUID is not valid, please verify the ORG id"+ bcolors.ENDC)
         else:
-            html = df5.to_html()
-            text_file = open(f"{file}", "a+")
-            text_file.write(html)
-            text_file.close()
-            print(bcolors.OKBLUE + "We found Orgnization in our search" + bcolors.ENDC)
-            display(df5)
-            print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)
+            df5 = ApiDB().query_all_regions(
+                query=f"""select name,id,customer_type from api_organization where (id) = '{orgID_str}' limit 20"""
+            )
+            if df5.empty:
+                print(bcolors.FAIL + "No Organization Found with provided ID" + bcolors.ENDC)
+                exit()
+            else:
+                html = df5.to_html()
+                text_file = open(f"{file}", "a+")
+                text_file.write(html)
+                text_file.close()
+                print(bcolors.OKBLUE + "We found Orgnization in our search" + bcolors.ENDC)
+                display(df5)
+                print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)
 
     if args.prov_id:
         cloudaccount_str = cloudaccount_search[0]
