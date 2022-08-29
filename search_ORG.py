@@ -239,7 +239,7 @@ class ApiDB:
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
-
+    # set arguments
     parser.add_argument("-org_name", help="org_name will search for the Organization by Name in DB", nargs=1, metavar=('organization_name'))
     parser.add_argument("-org_id", help="org_id will search for the Organization by ID in DB, must use the full organization ID", nargs=1, metavar=('organization_id'))
     parser.add_argument("-prov_id", help="prov_id will search for the Account by ID in DB, must use the full provider ID/Project Name", nargs=1, metavar=('provider_id'))
@@ -252,7 +252,7 @@ if __name__ == "__main__":
     parser.add_argument("-res_col", help="Provide the next values <provider_id asset_id jwt-token> to create a Reserve Collector", nargs=3, metavar=('provider_id','asset_id','jwt-token'))
     parser.add_argument("-res_s3", help="Provide the next values <provider_id bucket_name jwt-token> to create a S3 Bucket Reserve Collector", nargs=3, metavar=('provider_id','bucket_name','jwt-token'))
 
-    #arguments to variables 
+    # arguments to variables 
     args = parser.parse_args()
     orgName_search = getattr(args, "org_name")
     orgID_search = getattr(args, "org_id")
@@ -264,14 +264,13 @@ if __name__ == "__main__":
     gcp_id = getattr(args, "gcp_conf")
     cloudaccount_id_search = getattr(args, "cloudaccount")
 
-    #global variables
-
+    # global variables
     file = home_folder + "/Desktop/Search.html"
     aws_file = home_folder + "/.aws/config"
     orca_reg_link = "https://app.orcasecurity.io/register?invite_code="
     csv_file = home_folder + "/Desktop/Search.csv"
 
-    #remove old Search.html Search.csv files 
+    # remove old Search.html Search.csv files 
     if os.path.exists(file):
         os.remove(file)
         fle = Path(f"{file}")
@@ -281,7 +280,6 @@ if __name__ == "__main__":
         os.remove(csv_file)
         fle = Path(f"{csv_file}")
         fle.touch(exist_ok=True)
-
 
     if args.org_name:
         orgName_str = orgName_search[0]
@@ -303,7 +301,7 @@ if __name__ == "__main__":
     if args.org_id:
         tunnel()
         orgID_str = orgID_search[0]
-        # need to confirm that orgID_str is per UUID example - 7c9ee3e1-bbea-447f-853c-c53b9b190240
+        # confirm orgID_str is per UUID example - 7c9ee3e1-bbea-447f-853c-c53b9b190240
         if not re.match(r"^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$",orgID_str):
             print(bcolors.FAIL + "UUID is not valid, please verify the ORG id"+ bcolors.ENDC)
         else:
@@ -357,7 +355,6 @@ if __name__ == "__main__":
 
     if args.cloudaccount:
         cloudaccount_id_str = cloudaccount_id_search[0]
-        # need to confirm that orgID_str is per UUID example - 7c9ee3e1-bbea-447f-853c-c53b9b190240
         df10 = ApiDB().query_all_regions(
             query=f"""select name,id,cloud_provider_id,created_time from api_cloudaccount where (id) = '{cloudaccount_id_str}' limit 20"""
         )
@@ -416,10 +413,10 @@ if __name__ == "__main__":
         if df7.empty:
             print(bcolors.FAIL + "No provider ID Found" + bcolors.ENDC)
             exit()
-        #rare scenrio in case the same account exist in more then 1 region (we should not have it)
+        # rare scenrio in case the same account exist in more then 1 region (we should not have it)
         elif len(df7.index) > 1:
             double = df7["Org_Name"][1]
-            #check if we got more then 1 answer, in case we get 2 we will print up to 2 accounts. 
+
             if double != "":
                 aws_role_arn_1 = df7["aws_role_arn"][0]
                 role_external_id_1 = df7["role_external_id"][0]
@@ -526,7 +523,6 @@ gcloud config set project {aname}
             print(f"prp utils/api_scripts/api.py scan --api-host https://app.{location}.orcasecurity.io --jwt-tokens {jwt_token_search} --customer-account-id {account_id} --assets-to-scan {asset_id_search} --reserve-collectors {login_user_str}_collector_with_vpn --reserve-collector-backconnect-server utils/api_scripts/vpnconnect.json")
             os.remove(csv_file)
             exit()
-
 
     if args.res_s3:
         provider_id_search = getattr(args, "res_s3")[0]
