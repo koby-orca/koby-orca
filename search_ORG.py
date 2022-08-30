@@ -296,7 +296,7 @@ if __name__ == "__main__":
             text_file = open(f"{file}", "a+")
             text_file.write(html)
             text_file.close()
-            print(bcolors.OKBLUE + "We found Orgnization in our search" + bcolors.ENDC)
+            print(bcolors.OKBLUE + "We found Organization in our search" + bcolors.ENDC)
             display(df)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)
 
@@ -568,6 +568,7 @@ gcloud config set project {aname}
         else:
             bashCommand = "whoami"
             process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+            login_user, error = process.communicate()
             login_user, error = process.communicate()
             login_user_str = str(login_user).replace("\\n", "").replace("b'", "").replace("'", "")
             account_id = df9["CloudAccount_id"].to_string(index=False)
