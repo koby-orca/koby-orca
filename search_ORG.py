@@ -260,7 +260,7 @@ if __name__ == "__main__":
     preset_search = getattr(args, "preset")
     user_search = getattr(args, "user")
     invite_search = getattr(args, "invite")
-    cloudaccount_search = getattr(args, "prov_id")
+    provider_id_search = getattr(args, "prov_id")
     provider_id = getattr(args, "aws_conf")
     gcp_id = getattr(args, "gcp_conf")
     cloudaccount_id_search = getattr(args, "cloudaccount")
@@ -318,12 +318,12 @@ if __name__ == "__main__":
                 text_file = open(f"{file}", "a+")
                 text_file.write(html)
                 text_file.close()
-                print(bcolors.OKBLUE + "We found Orgnization in our search" + bcolors.ENDC)
+                print(bcolors.OKBLUE + "We found Organization in our search" + bcolors.ENDC)
                 display(df5)
                 print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)
 
     if args.prov_id:
-        cloudaccount_str = cloudaccount_search[0]
+        cloudaccount_str = provider_id_search[0]
         df6 = ApiDB().query_all_regions(query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info,api_cloudaccount.management_account_id,api_cloudaccount.allowed_regions from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{cloudaccount_str}' limit 20"""
         )
         if df6.empty:
@@ -465,7 +465,7 @@ external_id = {role_external_id}
             query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 20"""
         )
         if df8.empty:
-            print(bcolors.FAIL + "No Account Name Found" + bcolors.ENDC)
+            print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
             exit()
         else:
             oname = df8["Org_Name"].to_string(index=False)
@@ -483,8 +483,8 @@ external_id = {role_external_id}
         client_email, error = process.communicate()
 
         client_email_str = str(client_email).replace("\\n", "").replace("b'", "").replace("'", "")
-        print(bcolors.OKBLUE + "We found GCP Service Account Data in our search" + bcolors.ENDC)
-        print(bcolors.WARNING + json + bcolors.ENDC + bcolors.OKGREEN + " Was created succefully" + bcolors.ENDC)
+        print(bcolors.OKBLUE + "We found GCP Project in our search" + bcolors.ENDC)
+        print(bcolors.WARNING + json + bcolors.ENDC + bcolors.OKGREEN + " Was created successfully" + bcolors.ENDC)
         print(
             f"""
 {bcolors.OKCYAN}To active the .json and be able to run gcloud commands
