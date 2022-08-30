@@ -245,24 +245,26 @@ if __name__ == "__main__":
     parser.add_argument("-prov_id", help="prov_id will search for the Account by ID in DB, must use the full provider ID/Project Name", nargs=1, metavar=('provider_id'))
     parser.add_argument("-cloudaccount", help="Find the CloudAccount via the Orca cloudaccount_id", nargs=1, metavar=('cloudaccount_id'))
     parser.add_argument("-user", help="user will search for any User in DB", nargs=1, metavar=('email_address'))
-    parser.add_argument("-precet", help="precet will search any Precet in DB", nargs=1, metavar=('org_name'))
+    parser.add_argument("-preset", help="preset will search any Preset in DB", nargs=1, metavar=('org_name'))
     parser.add_argument("-invite", help="invite will search any Invite with a specific email in DB", nargs=1, metavar=('email_address'))
     parser.add_argument("-aws_conf", help="Provide aws_config data using the provider ID, in order to use aws cli", nargs=1, metavar=('provider_id'))
     parser.add_argument("-gcp_conf", help="Provide gcp_config data using the GCP Project name, in order to use gcloud cli", nargs=1, metavar=('provider_id'))
     parser.add_argument("-res_col", help="Provide the next values <provider_id asset_id jwt-token> to create a Reserve Collector", nargs=3, metavar=('provider_id','asset_id','jwt-token'))
     parser.add_argument("-res_s3", help="Provide the next values <provider_id bucket_name jwt-token> to create a S3 Bucket Reserve Collector", nargs=3, metavar=('provider_id','bucket_name','jwt-token'))
+    parser.add_argument("-res_fargate", help="Provide the next values <provider_id fargate_asset_id jwt-token> to create a Fargate Cluster Reserve Collector", nargs=3, metavar=('provider_id', 'fargate_asset_id', 'jwt-token'))
 
     # arguments to variables 
     args = parser.parse_args()
     orgName_search = getattr(args, "org_name")
     orgID_search = getattr(args, "org_id")
-    precet_search = getattr(args, "precet")
+    preset_search = getattr(args, "preset")
     user_search = getattr(args, "user")
     invite_search = getattr(args, "invite")
     cloudaccount_search = getattr(args, "prov_id")
     provider_id = getattr(args, "aws_conf")
     gcp_id = getattr(args, "gcp_conf")
     cloudaccount_id_search = getattr(args, "cloudaccount")
+
 
     # global variables
     file = home_folder + "/Desktop/Search.html"
@@ -336,20 +338,20 @@ if __name__ == "__main__":
             display(df6)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)
 
-    if args.precet:
-        precet_str = precet_search[0]
+    if args.preset:
+        preset_str = preset_search[0]
         df2 = ApiDB().query_all_regions(
-            query=f"""select name,settings from api_accountscansettingspreset where lower(name) like '%{precet_str}%' limit 20"""
+            query=f"""select name,settings from api_accountscansettingspreset where lower(name) like '%{preset_str}%' limit 20"""
         )
         if df2.empty:
-            print(bcolors.FAIL + "No Precet Found" + bcolors.ENDC)
+            print(bcolors.FAIL + "No Preset Found" + bcolors.ENDC)
             exit()
         else:
             html = df2.to_html()
             text_file = open(f"{file}", "a+")
             text_file.write(html)
             text_file.close()
-            print(bcolors.OKBLUE + "We found Precet in our search" + bcolors.ENDC)
+            print(bcolors.OKBLUE + "We found Preset in our search" + bcolors.ENDC)
             display(df2)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)           
 
@@ -550,5 +552,36 @@ gcloud config set project {aname}
             location = df_csv.region.to_string(index=False)
             print(bcolors.OKCYAN + "Please open a new iTerm and run next output:"+ bcolors.ENDC +"\n")
             print(f"prp utils/api_scripts/api.py scan --api-host https://app.{location}.orcasecurity.io --jwt-tokens {jwt_token_search} --customer-account-id {account_id} --buckets-to-scan {bucket_name_search} --reserve-s3-collectors {login_user_str}_collector_with_vpn --reserve-collector-backconnect-server utils/api_scripts/vpnconnect.json")
+            os.remove(csv_file)
+            exit()
+
+    if args.res_fargate:
+        provider_id_search = getattr(args, "res_fargate")[0]
+        fargate_asset_id_search = getattr(args, "res_fargate")[1]
+        jwt_token_search = getattr(args, "res_fargate")[2]
+
+        df9 = ApiDB().query_all_regions(
+            query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""")
+        if df9.empty:
+            print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
+            exit()
+        else:
+            bashCommand = "whoami"
+            process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+            login_user, error = process.communicate()
+            login_user_str = str(login_user).replace("\\n", "").replace("b'", "").replace("'", "")
+            account_id = df9["CloudAccount_id"].to_string(index=False)
+            csv_out = df9.to_csv()
+            text_file = open(f"{csv_file}", "a+")
+            text_file.write(csv_out)
+            text_file.close()
+
+            df_csv = pd.read_csv(f'{csv_file}', skipinitialspace=True)
+            fields = ['region']
+            region = df_csv.region
+            location = df_csv.region.to_string(index=False)
+            print(bcolors.OKCYAN + "Please open a new iTerm and run next output:" + bcolors.ENDC + "\n")
+            print(
+                f"prp utils/api_scripts/api.py scan --api-host https://app.{location}.orcasecurity.io --jwt-tokens {jwt_token_search} --customer-account-id {account_id} --assets-to-scan {fargate_asset_id_search} --reserve-fargate-collectors {login_user_str}_collector_with_vpn --reserve-collector-backconnect-server utils/api_scripts/vpnconnect.json")
             os.remove(csv_file)
             exit()
