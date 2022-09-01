@@ -81,6 +81,7 @@ def tunnel():
             for line in main_tunnel.stdout:
                 if search_val in line:
                     print(bcolors.OKBLUE + "Established tunnel to production environment US" + bcolors.ENDC)
+                    time.sleep(1)
                     break
 
     else:
@@ -89,6 +90,7 @@ def tunnel():
         for line in main_tunnel.stdout:
             if search_val in line:
                 print(bcolors.OKBLUE + "Established tunnel to production environment US" + bcolors.ENDC)
+                time.sleep(1)
                 break
 
     need_tunnel_9001 = subprocess.Popen("netstat -an | grep 9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -112,6 +114,7 @@ def tunnel():
             for line in eu_tunnel.stdout:
                 if search_val in line:
                     print(bcolors.OKBLUE + "Established tunnel to production environment EU" + bcolors.ENDC)
+                    time.sleep(1)
                     break
     else:
         eu_tunnel = subprocess.Popen("aws_rds_tunnel production 9001 --region eu-central-1", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
@@ -119,6 +122,7 @@ def tunnel():
         for line in eu_tunnel.stdout:
             if search_val in line:
                 print(bcolors.OKBLUE + "Established tunnel to production environment EU" + bcolors.ENDC)
+                time.sleep(1)
                 break
 
     need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -143,6 +147,7 @@ def tunnel():
             for line in ap_tunnel.stdout:
                 if search_val in line:
                     print(bcolors.OKBLUE + "Established tunnel to production environment AU" + bcolors.ENDC + "\n")
+                    time.sleep(1)
                     break
     else:
         ap_tunnel = subprocess.Popen("aws_rds_tunnel production 9002 --region ap-southeast-2", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE) 
@@ -150,8 +155,11 @@ def tunnel():
         for line in ap_tunnel.stdout:
             if search_val in line:
                 print(bcolors.OKBLUE + "Established tunnel to production environment AU" + bcolors.ENDC + "\n")
+                time.sleep(1)
                 break
+                
     confirm_tunel()
+
 
 def confirm_tunel():
     # make sure all tunnels are up and running
