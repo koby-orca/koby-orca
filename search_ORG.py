@@ -253,6 +253,7 @@ if __name__ == "__main__":
     parser.add_argument("-prov_id", help="prov_id will search for the Account by ID in DB, must use the full provider ID/Project Name", nargs=1, metavar=('provider_id'))
     parser.add_argument("-cloudaccount", help="Find the CloudAccount via the Orca cloudaccount_id", nargs=1, metavar=('cloudaccount_id'))
     parser.add_argument("-user", help="user will search for any User in DB", nargs=1, metavar=('email_address'))
+    parser.add_argument("-notification", help="Get Notification by Org ID", nargs=1, metavar=('organization_id'))
     parser.add_argument("-preset", help="preset will search any Preset in DB", nargs=1, metavar=('org_name'))
     parser.add_argument("-invite", help="invite will search any Invite with a specific email in DB", nargs=1, metavar=('email_address'))
     parser.add_argument("-aws_conf", help="Provide aws_config data using the provider ID, in order to use aws cli", nargs=1, metavar=('provider_id'))
@@ -272,7 +273,7 @@ if __name__ == "__main__":
     provider_id = getattr(args, "aws_conf")
     gcp_id = getattr(args, "gcp_conf")
     cloudaccount_id_search = getattr(args, "cloudaccount")
-
+    notification_search = getattr(args, "notification")
 
     # global variables
     file = home_folder + "/Desktop/Search.html"
@@ -376,6 +377,25 @@ if __name__ == "__main__":
             text_file.write(html)
             text_file.close()
             print(bcolors.OKBLUE + "We found CloudAccount ID in our search" + bcolors.ENDC)
+            display(df10)
+            print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)
+
+    if args.notification:
+        notification_search_str = notification_search[0]
+        if not re.match(r"^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$",notification_search_str):
+            print(bcolors.FAIL + "UUID is not valid, please verify the ORG id"+ bcolors.ENDC)
+        df10 = ApiDB().query_all_regions(
+            query=f"""select api_organization.name as "Org_Name",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 20"""
+        )
+        if df10.empty:
+            print(bcolors.FAIL + "No Notification Found for provided Organization ID" + bcolors.ENDC)
+            exit()
+        else:
+            html = df10.to_html()
+            text_file = open(f"{file}", "a+")
+            text_file.write(html)
+            text_file.close()
+            print(bcolors.OKBLUE + "We found next Notifications in our search" + bcolors.ENDC)
             display(df10)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)
 
