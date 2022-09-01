@@ -48,16 +48,16 @@ def aws_connect():
 
 def tunnel():
     config_bastion()
-    
 
     #configure max time for Tunnels to be opened
     max_time = "08:00:00"
 
     # check if tunnels are opened in case tunnels are open more then max_time, the tunnel will be reset
-
+    # checking US tunnel   
     need_tunnel_9000 = subprocess.Popen("netstat -an | grep 9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     need_tunnel_out, err = need_tunnel_9000.communicate()
     need = "127.0.0.1.9000".encode()
+    # if Tunnel open 
     if need in need_tunnel_out:
         get_pid_tun_1 = subprocess.Popen(
             "lsof -i :9000 | grep 'localhost:cslistener (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'", shell=True,
@@ -71,6 +71,7 @@ def tunnel():
         out_time_1_str = out_time_1.decode()
 
         time_pid_1 = out_time_1_str[:-1]
+        # if found open more then max_time, reset tunnel 
         if time_pid_1 > max_time:
             kill_pid_1 = subprocess.Popen(f"kill -9 {pid_1}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             out_pid_1, err = kill_pid_1.communicate()
@@ -81,8 +82,7 @@ def tunnel():
                 if search_val in line:
                     print(bcolors.OKBLUE + "Established tunnel to production environment US" + bcolors.ENDC)
                     break
-        else:
-            pass
+
     else:
         main_tunnel = subprocess.Popen("aws_rds_tunnel production 9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
         search_val = "localhost:9000".encode()
@@ -151,32 +151,39 @@ def tunnel():
             if search_val in line:
                 print(bcolors.OKBLUE + "Established tunnel to production environment AU" + bcolors.ENDC + "\n")
                 break
+    confirm_tunel()
 
-# make sure all tunnels are up and running 
-need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-need_tunnel_out, err = need_tunnel_9000.communicate()
-need = "localhost:cslistener (LISTEN)".encode()
-while need not in need_tunnel_out:
-    need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+def confirm_tunel():
+    # make sure all tunnels are up and running
+    need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
+                                        stderr=subprocess.STDOUT)
     need_tunnel_out, err = need_tunnel_9000.communicate()
-    time.sleep(1)
+    need = "localhost:cslistener (LISTEN)".encode()
+    while need not in need_tunnel_out:
+        need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
+                                            stderr=subprocess.STDOUT)
+        need_tunnel_out, err = need_tunnel_9000.communicate()
+        time.sleep(1)
 
-need_tunnel_9001 = subprocess.Popen("lsof -i :9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-need_tunnel_out, err = need_tunnel_9001.communicate()
-need = "localhost:etlservicemgr (LISTEN)".encode()
-while need not in need_tunnel_out:
-    need_tunnel_9001 = subprocess.Popen("lsof -i :9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    need_tunnel_9001 = subprocess.Popen("lsof -i :9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
+                                        stderr=subprocess.STDOUT)
     need_tunnel_out, err = need_tunnel_9001.communicate()
-    time.sleep(1)
+    need = "localhost:etlservicemgr (LISTEN)".encode()
+    while need not in need_tunnel_out:
+        need_tunnel_9001 = subprocess.Popen("lsof -i :9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
+                                            stderr=subprocess.STDOUT)
+        need_tunnel_out, err = need_tunnel_9001.communicate()
+        time.sleep(1)
 
-need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-need_tunnel_out, err = need_tunnel_9002.communicate()
-need = "localhost:dynamid (LISTEN)".encode()
-while need not in need_tunnel_out:
-    need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
+                                        stderr=subprocess.STDOUT)
     need_tunnel_out, err = need_tunnel_9002.communicate()
-    time.sleep(1)
-
+    need = "localhost:dynamid (LISTEN)".encode()
+    while need not in need_tunnel_out:
+        need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
+                                            stderr=subprocess.STDOUT)
+        need_tunnel_out, err = need_tunnel_9002.communicate()
+        time.sleep(1)
 
 class ApiDB:
 
@@ -211,7 +218,7 @@ class ApiDB:
     def query_all_regions(self, query, regions="all"):
         aws_connect()
         tunnel()
-          
+        
         ports = []
         if regions == "all":
             ports = [9000, 9001, 9002]
@@ -234,6 +241,7 @@ class ApiDB:
                 df["region"] = "ap"
             ret = pd.concat([ret, df], ignore_index=True)
         return ret
+
 
 
 if __name__ == "__main__":
@@ -301,7 +309,6 @@ if __name__ == "__main__":
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)
 
     if args.org_id:
-        tunnel()
         orgID_str = orgID_search[0]
         # confirm orgID_str is per UUID example - 7c9ee3e1-bbea-447f-853c-c53b9b190240
         if not re.match(r"^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$",orgID_str):
@@ -390,7 +397,6 @@ if __name__ == "__main__":
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)
 
     if args.invite:
-        tunnel()
         invite_str = invite_search[0]
         df4 = ApiDB().query_all_regions(
             query=f"""select email,organization_id,issue_date,'{orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite WHERE lower(original_email) like '%{invite_str}%' limit 20"""
