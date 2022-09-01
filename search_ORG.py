@@ -152,30 +152,30 @@ def tunnel():
                 print(bcolors.OKBLUE + "Established tunnel to production environment AU" + bcolors.ENDC + "\n")
                 break
 
-    # make sure all tunnels are up and running 
-    need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    need_tunnel_out, err = need_tunnel_9000.communicate()
-    need = "localhost:cslistener (LISTEN)".encode()
-    while need not in need_tunnel_out:
+        # make sure all tunnels are up and running 
         need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         need_tunnel_out, err = need_tunnel_9000.communicate()
-        time.sleep(1)
-
-    need_tunnel_9001 = subprocess.Popen("lsof -i :9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    need_tunnel_out, err = need_tunnel_9001.communicate()
-    need = "localhost:etlservicemgr (LISTEN)".encode()
-    while need not in need_tunnel_out:
+        need = "localhost:cslistener (LISTEN)".encode()
+        while need not in need_tunnel_out:
+            need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            need_tunnel_out, err = need_tunnel_9000.communicate()
+            time.sleep(1)
+    
         need_tunnel_9001 = subprocess.Popen("lsof -i :9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         need_tunnel_out, err = need_tunnel_9001.communicate()
-        time.sleep(1)
-
-    need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    need_tunnel_out, err = need_tunnel_9002.communicate()
-    need = "localhost:dynamid (LISTEN)".encode()
-    while need not in need_tunnel_out:
+        need = "localhost:etlservicemgr (LISTEN)".encode()
+        while need not in need_tunnel_out:
+            need_tunnel_9001 = subprocess.Popen("lsof -i :9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            need_tunnel_out, err = need_tunnel_9001.communicate()
+            time.sleep(1)
+    
         need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         need_tunnel_out, err = need_tunnel_9002.communicate()
-        time.sleep(1)
+        need = "localhost:dynamid (LISTEN)".encode()
+        while need not in need_tunnel_out:
+            need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            need_tunnel_out, err = need_tunnel_9002.communicate()
+            time.sleep(1)
 
 
 class ApiDB:
