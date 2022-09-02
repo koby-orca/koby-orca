@@ -10,6 +10,7 @@ warnings.filterwarnings('ignore')
 
 home_folder = os.environ.get("HOME")
 
+sys.tracebacklimit = 0
 class bcolors:
     HEADER = "\033[95m"
     OKBLUE = "\033[94m"
@@ -196,7 +197,7 @@ def confirm_tunel():
 class ApiDB:
 
     def query_api_db(self, query, port):
-        # sys.tracebacklimit = 0
+        sys.tracebacklimit = 0
         vals = get_val(home_folder+"/.secret/secrets.json")
         user = vals['user'] 
         password = vals['password']
@@ -218,7 +219,7 @@ class ApiDB:
         # return df
 
     def query_api_db_ap(self, query, port):
-        # sys.tracebacklimit = 0
+        sys.tracebacklimit = 0
         vals = get_val(home_folder+"/.secret/secrets.json")
         user = vals['user'] 
         password = vals['password']
@@ -243,7 +244,7 @@ class ApiDB:
     def query_all_regions(self, query, regions="all"):
         aws_connect()
         tunnel()
-        
+        sys.tracebacklimit = 0
         ports = []
         if regions == "all":
             ports = [9000, 9001, 9002]
@@ -279,7 +280,7 @@ class ApiDB:
 
 
 if __name__ == "__main__":
-    
+    sys.tracebacklimit = 0
     parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
     # set arguments
     parser.add_argument("-org_name", help="org_name will search for the Organization by Name in DB", nargs=1, metavar=('organization_name'))
