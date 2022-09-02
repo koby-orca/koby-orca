@@ -286,6 +286,7 @@ if __name__ == "__main__":
     parser.add_argument("-org_id", help="org_id will search for the Organization by ID in DB, must use the full organization ID", nargs=1, metavar=('organization_id'))
     parser.add_argument("-prov_id", help="prov_id will search for the Account by ID in DB, must use the full provider ID/Project Name", nargs=1, metavar=('provider_id'))
     parser.add_argument("-cloudaccount", help="Find the CloudAccount via the Orca cloudaccount_id", nargs=1, metavar=('cloudaccount_id'))
+    parser.add_argument("-k8s", help="Find the Kubernetes cluster using the provider_id", nargs=1, metavar=('provider_id'))
     parser.add_argument("-user", help="user will search for any User in DB", nargs=1, metavar=('email_address'))
     parser.add_argument("-notification", help="Get Notification by Org ID", nargs=1, metavar=('organization_id'))
     parser.add_argument("-preset", help="preset will search any Preset in DB", nargs=1, metavar=('org_name'))
@@ -308,6 +309,7 @@ if __name__ == "__main__":
     gcp_id = getattr(args, "gcp_conf")
     cloudaccount_id_search = getattr(args, "cloudaccount")
     notification_search = getattr(args, "notification")
+    k8s_search = getattr(args, "k8s")
 
     # global variables
     file = home_folder + "/Desktop/Search.html"
@@ -364,6 +366,28 @@ if __name__ == "__main__":
                 display(df5)
                 print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)
 
+    if args.k8s:
+        k8s_str = k8s_search[0]
+        df10 = ApiDB().query_all_regions(query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{k8s_str}' limit 20""")
+        if df10.empty:
+            print(bcolors.FAIL + "No CloudAccount ID Found with provided ID" + bcolors.ENDC)
+            exit()
+        else: 
+            account_id = df10['id'][0]
+            df5 = ApiDB().query_all_regions(query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 20""")
+            if df5.empty:
+                print(bcolors.FAIL + "No Kubernetes clusters found" + bcolors.ENDC)
+                exit()
+            else:
+                html = df5.to_html()
+                text_file = open(f"{file}", "a+")
+                text_file.write(html)
+                text_file.close()
+                print(bcolors.OKBLUE + "We found the next Kubernetes clusters: " + bcolors.ENDC)
+                display(df5)
+                print(bcolors.OKBLUE + "Status - 0 = Discovered, 1 = Onboarded, 2 = Deleted" + bcolors.ENDC)
+                print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)
+
     if args.prov_id:
         cloudaccount_str = provider_id_search[0]
         df6 = ApiDB().query_all_regions(query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info,api_cloudaccount.management_account_id,api_cloudaccount.allowed_regions from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{cloudaccount_str}' limit 20"""
@@ -399,9 +423,7 @@ if __name__ == "__main__":
 
     if args.cloudaccount:
         cloudaccount_id_str = cloudaccount_id_search[0]
-        df10 = ApiDB().query_all_regions(
-            query=f"""select name,id,cloud_provider_id,created_time from api_cloudaccount where (id) = '{cloudaccount_id_str}' limit 20"""
-        )
+        df10 = ApiDB().query_all_regions(query=f"""select name,id,cloud_provider_id,created_time from api_cloudaccount where (id) = '{cloudaccount_id_str}' limit 20""")
         if df10.empty:
             print(bcolors.FAIL + "No CloudAccount ID Found with provided ID" + bcolors.ENDC)
             exit()
