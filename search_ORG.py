@@ -196,6 +196,7 @@ def confirm_tunel():
 class ApiDB:
 
     def query_api_db(self, query, port):
+        # sys.tracebacklimit = 0
         vals = get_val(home_folder+"/.secret/secrets.json")
         user = vals['user'] 
         password = vals['password']
@@ -204,12 +205,20 @@ class ApiDB:
         user = user
         password = password
         host = "localhost"
-        conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
-        df = pd.read_sql(con=conn, sql=query)
-        pd.set_option("display.max_colwidth", 100)
-        return df
+        try:
+            conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+            df = pd.read_sql(con=conn, sql=query)
+            pd.set_option("display.max_colwidth", 199)
+            return df
+        except psycopg2.OperationalError as error:
+            print(bcolors.FAIL + "Please check your Internet connection and try again"+ bcolors.ENDC)
+        # conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+        # df = pd.read_sql(con=conn, sql=query)
+        # pd.set_option("display.max_colwidth", 100)
+        # return df
 
     def query_api_db_ap(self, query, port):
+        # sys.tracebacklimit = 0
         vals = get_val(home_folder+"/.secret/secrets.json")
         user = vals['user'] 
         password = vals['password']
@@ -218,10 +227,18 @@ class ApiDB:
         user = user
         password = password
         host = "localhost"
-        conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
-        df = pd.read_sql(con=conn, sql=query)
-        pd.set_option("display.max_colwidth", 199)
-        return df
+        try:
+            conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+            df = pd.read_sql(con=conn, sql=query)
+            pd.set_option("display.max_colwidth", 199)
+            return df
+        except psycopg2.OperationalError as error:
+            print(bcolors.FAIL + "Please check your Internet connection and try again"+ bcolors.ENDC)
+
+        # conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+        # df = pd.read_sql(con=conn, sql=query)
+        # pd.set_option("display.max_colwidth", 199)
+        # return df
 
     def query_all_regions(self, query, regions="all"):
         aws_connect()
@@ -240,13 +257,22 @@ class ApiDB:
         for port in ports:
             if port == 9000:
                 df = self.query_api_db(query, port=port)
-                df["region"] = "us"
+                if df is not None:
+                    df["region"] = "us"
+                else:
+                    exit()
             elif port == 9001:
                 df = self.query_api_db(query, port=port)
-                df["region"] = "eu"
+                if df is not None:
+                    df["region"] = "eu"
+                else:
+                    exit()
             elif port == 9002:
                 df = self.query_api_db_ap(query, port=port)
-                df["region"] = "ap"
+                if df is not None:
+                    df["region"] = "ap"
+                else:
+                    exit()
             ret = pd.concat([ret, df], ignore_index=True)
         return ret
 
