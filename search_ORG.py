@@ -5,12 +5,14 @@ from pathlib import Path
 from subprocess import check_output
 import warnings
 
-#remove FutureWarrning text
+# remove Future Warning text - remove in case need to debug
 warnings.filterwarnings('ignore')
+sys.tracebacklimit = 0
 
+# Global variables
 home_folder = os.environ.get("HOME")
 
-sys.tracebacklimit = 0
+
 class bcolors:
     HEADER = "\033[95m"
     OKBLUE = "\033[94m"
@@ -32,13 +34,10 @@ def config_bastion():
         new_bastion = subprocess.Popen("cd ~/.ssh; ln -s $SRC_ROOT/cli/op/shell_rc/ssh/config_bastion config_bastion", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         include_bastion = subprocess.Popen("echo 'Include ~/.ssh/config_bastion' > ~/.ssh/config", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-    
-
 def get_val(path):
     with open(path) as f:
         return json.load(f)
     
-
 def aws_connect():
     awd_connect = subprocess.Popen("aws sqs list-queues", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     out, err = awd_connect.communicate()
@@ -46,13 +45,13 @@ def aws_connect():
     if token in out:
         open_tunnel = subprocess.Popen("aws sso login", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT).wait()
 
-
 def tunnel():
     config_bastion()
 
     #configure max time for Tunnels to be opened
     max_time = "08:00:00"
-
+    max_len = 9
+    
     # check if tunnels are opened in case tunnels are open more then max_time, the tunnel will be reset
     # checking US tunnel   
     need_tunnel_9000 = subprocess.Popen("netstat -an | grep 9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -73,7 +72,7 @@ def tunnel():
 
         time_pid_1 = out_time_1_str[:-1]
         # if found open more then max_time, reset tunnel 
-        if time_pid_1 > max_time:
+        if time_pid_1 > max_time or len(time_pid_1) >= max_len:
             kill_pid_1 = subprocess.Popen(f"kill -9 {pid_1}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             out_pid_1, err = kill_pid_1.communicate()
             main_tunnel = subprocess.Popen("aws_rds_tunnel production 9000", shell=True, executable="/bin/zsh",
@@ -107,7 +106,7 @@ def tunnel():
         out_time_2_str = out_time_2.decode()
 
         time_pid_2 = out_time_2_str[:-1]
-        if time_pid_2 > max_time:
+        if time_pid_2 > max_time or len(time_pid_2) >= max_len:
             kill_pid_2 = subprocess.Popen(f"kill -9 {pid_2}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             out_pid_2, err = kill_pid_2.communicate()
             eu_tunnel = subprocess.Popen("aws_rds_tunnel production 9001 --region eu-central-1", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
@@ -138,9 +137,9 @@ def tunnel():
         time_tun_3 = subprocess.Popen(f"ps -o etime {pid_3} | grep -v 'ELAPSED'", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         out_time_3, err = time_tun_3.communicate()
         out_time_3_str = out_time_3.decode()
-
         time_pid_3 = out_time_3_str[:-1]
-        if time_pid_3 > max_time:
+
+        if time_pid_3 > max_time or len(time_pid_3) >= max_len:
             kill_pid_3 = subprocess.Popen(f"kill -9 {pid_3}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             out_pid_3, err = kill_pid_3.communicate()
             ap_tunnel = subprocess.Popen("aws_rds_tunnel production 9002 --region ap-southeast-2", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
@@ -160,7 +159,6 @@ def tunnel():
                 break
                 
     confirm_tunel()
-
 
 def confirm_tunel():
     # make sure all tunnels are up and running
@@ -197,7 +195,9 @@ def confirm_tunel():
 class ApiDB:
 
     def query_api_db(self, query, port):
+        # remove Future Warning text - remove in case need to debug
         sys.tracebacklimit = 0
+        
         vals = get_val(home_folder+"/.secret/secrets.json")
         user = vals['user'] 
         password = vals['password']
@@ -219,7 +219,9 @@ class ApiDB:
         # return df
 
     def query_api_db_ap(self, query, port):
+        # remove Future Warning text - remove in case need to debug
         sys.tracebacklimit = 0
+        
         vals = get_val(home_folder+"/.secret/secrets.json")
         user = vals['user'] 
         password = vals['password']
@@ -277,10 +279,10 @@ class ApiDB:
             ret = pd.concat([ret, df], ignore_index=True)
         return ret
 
-
-
 if __name__ == "__main__":
+    # remove Future Warning text - remove in case need to debug
     sys.tracebacklimit = 0
+    
     parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
     # set arguments
     parser.add_argument("-org_name", help="org_name will search for the Organization by Name in DB", nargs=1, metavar=('organization_name'))
