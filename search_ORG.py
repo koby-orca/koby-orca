@@ -11,7 +11,7 @@ sys.tracebacklimit = 0
 
 # Global variables
 home_folder = os.environ.get("HOME")
-
+orca_folder = os.environ.get("SRC_ROOT")
 
 class bcolors:
     HEADER = "\033[95m"
@@ -290,6 +290,7 @@ if __name__ == "__main__":
     parser.add_argument("-prov_id", help="prov_id will search for the Account by ID in DB, must use the full provider ID/Project Name", nargs=1, metavar=('provider_id'))
     parser.add_argument("-cloudaccount", help="Find the CloudAccount via the Orca cloudaccount_id", nargs=1, metavar=('cloudaccount_id'))
     parser.add_argument("-k8s", help="Find the Kubernetes cluster using the provider_id", nargs=1, metavar=('provider_id'))
+    parser.add_argument("-k8s_conn", help="Test k8s connectivity, getting a command to run using <provider_id cluster_name>", nargs=2, metavar=('provider_id','cluster_name'))
     parser.add_argument("-user", help="user will search for any User in DB", nargs=1, metavar=('email_address'))
     parser.add_argument("-notification", help="Get Notification by Org ID", nargs=1, metavar=('organization_id'))
     parser.add_argument("-preset", help="preset will search any Preset in DB", nargs=1, metavar=('org_name'))
@@ -390,6 +391,69 @@ if __name__ == "__main__":
                 display(df5)
                 print(bcolors.OKBLUE + "Status - 0 = Discovered, 1 = Onboarded, 2 = Deleted" + bcolors.ENDC)
                 print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + file)
+
+    if args.k8s_conn:
+        provider_id = getattr(args, "k8s_conn")[0]
+        cluster_name = getattr(args, "k8s_conn")[1]
+
+        df10 = ApiDB().query_all_regions(
+            query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{provider_id}' limit 20""")
+        if df10.empty:
+            print(bcolors.FAIL + "No CloudAccount ID Found with provided ID" + bcolors.ENDC)
+            exit()
+        else:
+            account_id = df10['id'][0]
+            df5 = ApiDB().query_all_regions(
+                query=f"""select cluster_name,cluster_type,location from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 20""")
+            if df5.empty:
+                print(bcolors.FAIL + "No Kubernetes clusters found" + bcolors.ENDC)
+                exit()
+            else:
+                out = df5.loc[df5['cluster_name'] == cluster_name]
+                line = out.index[0]
+                cluster_name = out['cluster_name'][line]
+                location = out['location'][line]
+                cloud_provider_out = out['cluster_type'][line]
+
+                if cloud_provider_out == 'gke':
+                    cloud_provider = 'gcp'
+                    df8 = ApiDB().query_all_regions(
+                        query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{provider_id}%' limit 20""")
+                    SA = df8["gcp_service_account"][0]
+
+                    oname = df8["Org_Name"].to_string(index=False)
+                    aname = df8["cloud_provider_id"].to_string(index=False)
+                    json = home_folder + "/.gcp/" + f"{oname}" + "_" + f"{aname}" + ".json"
+                    replace_df8 = df8.replace(r"\r+|\n+|\t+", "", regex=True)
+
+                    for i in replace_df8["gcp_service_account"]:
+                        f = open(f"{json}", "w")
+                        f.write(i[:-1].replace("{ ", "{", 1) + "}")
+                        f.close()
+
+                    bashCommand = f"cat '{json}'"
+                    process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+                    SA, error = process.communicate()
+                    service_account = str(SA).replace("b'", "").replace("\\\\n", "\\n")
+                    print(bcolors.OKCYAN + "Please open a new iTerm window and run: " + bcolors.ENDC)
+                    print(
+                        f"opp {orca_folder}/sensors/services/kubernator/local_kubernator.py --cloud-provider {cloud_provider} --cluster-name {cluster_name} gke --gcp-project-id {provider_id} --gcp-service-account '{service_account}")
+
+                elif cloud_provider_out == 'eks':
+                    cloud_provider = 'aws'
+                    df7 = ApiDB().query_all_regions(
+                        query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id}' limit 20""")
+                    aws_role_arn = df7["aws_role_arn"][0]
+                    role_external_id = df7["role_external_id"][0]
+                    print(bcolors.OKCYAN + "Please open a new iTerm window and run: " + bcolors.ENDC)
+                    print("ops")
+                    print(
+                        bcolors.OKCYAN + "After" + bcolors.FAIL + " ops " + bcolors.ENDC + bcolors.OKCYAN + "is up please run:" + bcolors.ENDC)
+                    print(
+                        f"AWS_PROFILE=production python {orca_folder}/sensors/services/kubernator/local_kubernator.py --cloud-provider {cloud_provider} --cluster-name {cluster_name} eks --aws-region-name {location} --aws-role-arn {aws_role_arn} --aws-role-external-id {role_external_id}")
+
+                elif cloud_provider_out == 'aks':
+                    print("not supported yet, working on it")
 
     if args.prov_id:
         cloudaccount_str = provider_id_search[0]
@@ -494,9 +558,7 @@ if __name__ == "__main__":
 
     if args.aws_conf:
         provider_str = provider_id[0]
-        df7 = ApiDB().query_all_regions(
-            query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20"""
-        )
+        df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""")
         if df7.empty:
             print(bcolors.FAIL + "No provider ID Found" + bcolors.ENDC)
             exit()
