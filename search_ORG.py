@@ -1,5 +1,5 @@
 import pandas as pd
-import psycopg2, argparse, os, subprocess, json,csv,time,sys,re
+import psycopg2, argparse, os, subprocess, json,csv,time,sys,re,requests
 from IPython.display import display
 from pathlib import Path
 from subprocess import check_output
@@ -212,12 +212,12 @@ class ApiDB:
             pd.set_option("display.max_colwidth", 199)
             return df
         except psycopg2.OperationalError as error:
-            print(bcolors.FAIL + "Please check your Internet connection and try again"+ bcolors.ENDC)
-        # conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
-        # df = pd.read_sql(con=conn, sql=query)
-        # pd.set_option("display.max_colwidth", 100)
-        # return df
-
+            error_msg = str(error)
+            if "password authentication failed" in error_msg:
+                print((bcolors.FAIL + "Please check your secret file (~/.secret) and confirm User and Password are correct"+ bcolors.ENDC))
+            else:
+                print(bcolors.FAIL + "Please check your Internet connection and try again"+ bcolors.ENDC)
+            
     def query_api_db_ap(self, query, port):
         # remove Future Warning text - remove in case need to debug
         sys.tracebacklimit = 0
@@ -236,12 +236,12 @@ class ApiDB:
             pd.set_option("display.max_colwidth", 199)
             return df
         except psycopg2.OperationalError as error:
-            print(bcolors.FAIL + "Please check your Internet connection and try again"+ bcolors.ENDC)
+            msg = str(error)
+            if "password authentication failed" in msg:
+                print((bcolors.FAIL + "Please check your secret file (~/.secret) and confirm User and Password are correct"+ bcolors.ENDC))
+            else:
+                print(bcolors.FAIL + "Please check your Internet connection and try again"+ bcolors.ENDC)
 
-        # conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
-        # df = pd.read_sql(con=conn, sql=query)
-        # pd.set_option("display.max_colwidth", 199)
-        # return df
 
     def query_all_regions(self, query, regions="all"):
         aws_connect()
