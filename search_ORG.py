@@ -716,7 +716,6 @@ gcloud config set project {aname}
             bashCommand = "whoami"
             process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
             login_user, error = process.communicate()
-            login_user, error = process.communicate()
             login_user_str = str(login_user).replace("\\n", "").replace("b'", "").replace("'", "")
             account_id = df9["CloudAccount_id"].to_string(index=False)
             csv_out = df9.to_csv()
