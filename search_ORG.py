@@ -213,10 +213,18 @@ class ApiDB:
             return df
         except psycopg2.OperationalError as error:
             error_msg = str(error)
-            if "password authentication failed" in error_msg:
-                print((bcolors.FAIL + "Please check your secret file (~/.secret) and confirm User and Password are correct"+ bcolors.ENDC))
+            if "server closed" or "Connection refused" in error_msg:
+                tunnel()
+                conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+                df = pd.read_sql(con=conn, sql=query)
+                pd.set_option("display.max_colwidth", 199)
+                # print("works")
+                return df
+            elif "password authentication failed" in error_msg:
+                print(bcolors.FAIL + "Please check your secret file (~/.secret) and confirm User and Password are correct"+ bcolors.ENDC)
             else:
                 print(bcolors.FAIL + "Please check your Internet connection and try again"+ bcolors.ENDC)
+                # print(error_msg)
             
     def query_api_db_ap(self, query, port):
         # remove Future Warning text - remove in case need to debug
@@ -236,12 +244,19 @@ class ApiDB:
             pd.set_option("display.max_colwidth", 199)
             return df
         except psycopg2.OperationalError as error:
-            msg = str(error)
-            if "password authentication failed" in msg:
-                print((bcolors.FAIL + "Please check your secret file (~/.secret) and confirm User and Password are correct"+ bcolors.ENDC))
+            error_msg = str(error)
+            if "server closed" or "Connection refused" in error_msg:
+                tunnel()
+                conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+                df = pd.read_sql(con=conn, sql=query)
+                pd.set_option("display.max_colwidth", 199)
+                # print("works")
+                return df
+            elif "password authentication failed" in error_msg:
+                print(bcolors.FAIL + "Please check your secret file (~/.secret) and confirm User and Password are correct" + bcolors.ENDC)
             else:
-                print(bcolors.FAIL + "Please check your Internet connection and try again"+ bcolors.ENDC)
-
+                print(bcolors.FAIL + "Please check your Internet connection and try again" + bcolors.ENDC)
+                # print(error_msg)
 
     def query_all_regions(self, query, regions="all"):
         aws_connect()
@@ -279,10 +294,10 @@ class ApiDB:
             ret = pd.concat([ret, df], ignore_index=True)
         return ret
 
-if __name__ == "__main__":
+if __name__ == "__main__": 
     # remove Future Warning text - remove in case need to debug
     sys.tracebacklimit = 0
-    
+        
     parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
     # set arguments
     parser.add_argument("-org_name", help="org_name will search for the Organization by Name in DB", nargs=1, metavar=('organization_name'))
@@ -569,10 +584,12 @@ if __name__ == "__main__":
             if double != "":
                 aws_role_arn_1 = df7["aws_role_arn"][0]
                 role_external_id_1 = df7["role_external_id"][0]
-                org_name_1 = df7["Org_Name"][0]
+                org_name_1_tmp = df7["Org_Name"][0]
+                org_name_1 = org_name_1_tmp.replace(' ', '_')
                 aws_role_arn_2 = df7["aws_role_arn"][1]
                 role_external_id_2 = df7["role_external_id"][1]
-                org_name_2 = df7["Org_Name"][1]
+                org_name_2_tmp = df7["Org_Name"][1]
+                org_name_2 = org_name_2_tmp.replace(' ', '_')
 
                 print(
                     f"""{bcolors.OKCYAN}Please Copy the next output to the aws config file in:{bcolors.ENDC} {aws_file}
@@ -594,7 +611,8 @@ external_id = {role_external_id_2}
         else:
             aws_role_arn = df7["aws_role_arn"][0]
             role_external_id = df7["role_external_id"][0]
-            org_name = df7["Org_Name"][0]
+            org_name_tmp = df7["Org_Name"][0]
+            org_name = org_name_tmp.replace(' ', '_')
             print(
                 f"""{bcolors.OKCYAN}Please Copy the next output to the aws config file in:{bcolors.ENDC} {aws_file}
 
