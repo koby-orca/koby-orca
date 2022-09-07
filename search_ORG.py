@@ -207,18 +207,35 @@ class ApiDB:
         password = password
         host = "localhost"
         try:
-            conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+            conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port, connect_timeout=5)
             df = pd.read_sql(con=conn, sql=query)
             pd.set_option("display.max_colwidth", 199)
             return df
         except psycopg2.OperationalError as error:
             error_msg = str(error)
-            if "server closed" or "Connection refused" in error_msg:
+            if "server closed" or "Connection refused" or "timed out" in error_msg:
+                print(bcolors.FAIL +"All Tunnels are down, Resetting AllTunnels please wait..."+ bcolors.ENDC)
+                get_pid_tun_us = subprocess.Popen("lsof -i :9000 | grep 'localhost:cslistener (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                out_us, err = get_pid_tun_us.communicate()
+                get_pid_tun_eu = subprocess.Popen("lsof -i :9001 | grep 'localhost:etlservicemgr (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                out_eu, err = get_pid_tun_eu.communicate()
+                get_pid_tun_au = subprocess.Popen("lsof -i :9002 | grep 'localhost:dynamid (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                out_au, err = get_pid_tun_au.communicate()
+
+                pid_us_str = out_us.decode()
+                pid_eu_str = out_eu.decode()
+                pid_au_str = out_au.decode()
+                pid_us = pid_us_str[:-1]
+                pid_eu = pid_eu_str[:-1]
+                pid_au = pid_au_str[:-1]
+                
+                kill_tun = subprocess.Popen(f"kill {pid_us} {pid_eu} {pid_au}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                kill, err = kill_tun.communicate()
+                
                 tunnel()
                 conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
                 df = pd.read_sql(con=conn, sql=query)
                 pd.set_option("display.max_colwidth", 199)
-                # print("works")
                 return df
             elif "password authentication failed" in error_msg:
                 print(bcolors.FAIL + "Please check your secret file (~/.secret) and confirm User and Password are correct"+ bcolors.ENDC)
@@ -239,21 +256,33 @@ class ApiDB:
         password = password
         host = "localhost"
         try:
-            conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
+            conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port, connect_timeout=5)
             df = pd.read_sql(con=conn, sql=query)
             pd.set_option("display.max_colwidth", 199)
             return df
         except psycopg2.OperationalError as error:
             error_msg = str(error)
-            if "server closed" or "Connection refused" in error_msg:
+            if "server closed" or "Connection refused" or "timed out" in error_msg:
+                print(bcolors.FAIL + "AU Tunnel is down, Resetting AU Tunnel please wait..." + bcolors.ENDC)
+
+                get_pid_tun_au = subprocess.Popen("lsof -i :9002 | grep 'localhost:dynamid (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                out_au, err = get_pid_tun_au.communicate()
+
+                pid_au_str = out_au.decode()
+                pid_au = pid_au_str[:-1]
+
+                kill_tun = subprocess.Popen(f"kill {pid_au}", shell=True, executable="/bin/zsh",
+                                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                kill, err = kill_tun.communicate()
+
                 tunnel()
                 conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
                 df = pd.read_sql(con=conn, sql=query)
                 pd.set_option("display.max_colwidth", 199)
-                # print("works")
                 return df
             elif "password authentication failed" in error_msg:
-                print(bcolors.FAIL + "Please check your secret file (~/.secret) and confirm User and Password are correct" + bcolors.ENDC)
+                print(
+                    bcolors.FAIL + "Please check your secret file (~/.secret) and confirm User and Password are correct" + bcolors.ENDC)
             else:
                 print(bcolors.FAIL + "Please check your Internet connection and try again" + bcolors.ENDC)
                 # print(error_msg)
@@ -433,10 +462,10 @@ if __name__ == "__main__":
                 if cloud_provider_out == 'gke':
                     cloud_provider = 'gcp'
                     df8 = ApiDB().query_all_regions(
-                        query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{provider_id}%' limit 20""")
+                        query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{provider_id}%' limit 20""")
                     SA = df8["gcp_service_account"][0]
 
-                    oname = df8["Org_Name"].to_string(index=False)
+                    oname = df8["organization_name"].to_string(index=False)
                     aname = df8["cloud_provider_id"].to_string(index=False)
                     json = home_folder + "/.gcp/" + f"{oname}" + "_" + f"{aname}" + ".json"
                     replace_df8 = df8.replace(r"\r+|\n+|\t+", "", regex=True)
@@ -457,7 +486,7 @@ if __name__ == "__main__":
                 elif cloud_provider_out == 'eks':
                     cloud_provider = 'aws'
                     df7 = ApiDB().query_all_regions(
-                        query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id}' limit 20""")
+                        query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id}' limit 20""")
                     aws_role_arn = df7["aws_role_arn"][0]
                     role_external_id = df7["role_external_id"][0]
                     print(bcolors.OKCYAN + "Please open a new iTerm window and run: " + bcolors.ENDC)
@@ -472,7 +501,7 @@ if __name__ == "__main__":
 
     if args.prov_id:
         cloudaccount_str = provider_id_search[0]
-        df6 = ApiDB().query_all_regions(query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info,api_cloudaccount.management_account_id,api_cloudaccount.allowed_regions from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{cloudaccount_str}' limit 20"""
+        df6 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info,api_cloudaccount.management_account_id,api_cloudaccount.allowed_regions from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{cloudaccount_str}' limit 20"""
         )
         if df6.empty:
             print(bcolors.FAIL + "No CloudAccount Found with provided ID" + bcolors.ENDC)
@@ -505,7 +534,7 @@ if __name__ == "__main__":
 
     if args.cloudaccount:
         cloudaccount_id_str = cloudaccount_id_search[0]
-        df10 = ApiDB().query_all_regions(query=f"""select name,id,cloud_provider_id,created_time from api_cloudaccount where (id) = '{cloudaccount_id_str}' limit 20""")
+        df10 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name",api_cloudaccount.name,api_cloudaccount.id,api_cloudaccount.cloud_provider_id,api_cloudaccount.created_time from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (api_cloudaccount.id) = '{cloudaccount_id_str}' limit 20""")
         if df10.empty:
             print(bcolors.FAIL + "No CloudAccount ID Found with provided ID" + bcolors.ENDC)
             exit()
@@ -523,7 +552,7 @@ if __name__ == "__main__":
         if not re.match(r"^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$",notification_search_str):
             print(bcolors.FAIL + "UUID is not valid, please verify the ORG id"+ bcolors.ENDC)
         df10 = ApiDB().query_all_regions(
-            query=f"""select api_organization.name as "Org_Name",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 20"""
+            query=f"""select api_organization.name as "organization_name",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 20"""
         )
         if df10.empty:
             print(bcolors.FAIL + "No Notification Found for provided Organization ID" + bcolors.ENDC)
@@ -540,7 +569,7 @@ if __name__ == "__main__":
     if args.user:
         user_str = user_search[0]
         df3 = ApiDB().query_all_regions(
-            query=f"""select original_email,organization_id,status from api_apiuser where lower(original_email) like '%{user_str}%' limit 20"""
+            query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 20"""
         )
         if df3.empty:
             print(bcolors.FAIL + "No User Found" + bcolors.ENDC)
@@ -573,22 +602,22 @@ if __name__ == "__main__":
 
     if args.aws_conf:
         provider_str = provider_id[0]
-        df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""")
+        df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""")
         if df7.empty:
             print(bcolors.FAIL + "No provider ID Found" + bcolors.ENDC)
             exit()
         # rare scenrio in case the same account exist in more then 1 region (we should not have it)
         elif len(df7.index) > 1:
-            double = df7["Org_Name"][1]
+            double = df7["organization_name"][1]
 
             if double != "":
                 aws_role_arn_1 = df7["aws_role_arn"][0]
                 role_external_id_1 = df7["role_external_id"][0]
-                org_name_1_tmp = df7["Org_Name"][0]
+                org_name_1_tmp = df7["organization_name"][0]
                 org_name_1 = org_name_1_tmp.replace(' ', '_')
                 aws_role_arn_2 = df7["aws_role_arn"][1]
                 role_external_id_2 = df7["role_external_id"][1]
-                org_name_2_tmp = df7["Org_Name"][1]
+                org_name_2_tmp = df7["organization_name"][1]
                 org_name_2 = org_name_2_tmp.replace(' ', '_')
 
                 print(
@@ -611,7 +640,7 @@ external_id = {role_external_id_2}
         else:
             aws_role_arn = df7["aws_role_arn"][0]
             role_external_id = df7["role_external_id"][0]
-            org_name_tmp = df7["Org_Name"][0]
+            org_name_tmp = df7["organization_name"][0]
             org_name = org_name_tmp.replace(' ', '_')
             print(
                 f"""{bcolors.OKCYAN}Please Copy the next output to the aws config file in:{bcolors.ENDC} {aws_file}
@@ -627,13 +656,13 @@ external_id = {role_external_id}
     if args.gcp_conf:
         gcp_str = gcp_id[0]
         df8 = ApiDB().query_all_regions(
-            query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 20"""
+            query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 20"""
         )
         if df8.empty:
             print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
             exit()
         else:
-            oname = df8["Org_Name"].to_string(index=False)
+            oname = df8["organization_name"].to_string(index=False)
             aname = df8["cloud_provider_id"].to_string(index=False)
             json = home_folder + "/.gcp/" + f"{oname}" + "_" + f"{aname}" + ".json"
             replace_df8 = df8.replace(r"\r+|\n+|\t+", "", regex=True)
@@ -667,7 +696,7 @@ gcloud config set project {aname}
         asset_id_search = getattr(args, "res_col")[1]
         jwt_token_search = getattr(args, "res_col")[2]
         
-        df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""")
+        df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""")
         if df9.empty:
             print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
             exit()
@@ -696,7 +725,7 @@ gcloud config set project {aname}
         bucket_name_search = getattr(args, "res_s3")[1]
         jwt_token_search = getattr(args, "res_s3")[2]
         
-        df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""")
+        df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""")
         if df9.empty:
             print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
             exit()
@@ -726,7 +755,7 @@ gcloud config set project {aname}
         jwt_token_search = getattr(args, "res_fargate")[2]
 
         df9 = ApiDB().query_all_regions(
-            query=f"""select api_organization.name as "Org_Name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""")
+            query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""")
         if df9.empty:
             print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
             exit()
