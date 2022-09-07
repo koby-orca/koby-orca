@@ -586,7 +586,7 @@ if __name__ == "__main__":
     if args.invite:
         invite_str = invite_search[0]
         df4 = ApiDB().query_all_regions(
-            query=f"""select email,organization_id,issue_date,'{orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite WHERE lower(original_email) like '%{invite_str}%' limit 20"""
+            query=f"""select api_userinvite.email,api_organization.name as "organization_name",api_userinvite.organization_id,api_userinvite.issue_date,'{orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite join api_organization on api_organization.id = api_userinvite.organization_id WHERE lower(original_email) like '%{invite_str}%' limit 20"""
         )
         if df4.empty:
             print(bcolors.FAIL + "No Invite Found" + bcolors.ENDC)
