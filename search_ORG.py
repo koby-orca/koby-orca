@@ -233,10 +233,15 @@ class ApiDB:
                 kill, err = kill_tun.communicate()
                 
                 tunnel()
-                conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
-                df = pd.read_sql(con=conn, sql=query)
-                pd.set_option("display.max_colwidth", 199)
-                return df
+                try:
+                    conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port, connect_timeout=10)
+                    df = pd.read_sql(con=conn, sql=query)
+                    pd.set_option("display.max_colwidth", 199)
+                    return df
+                except psycopg2.OperationalError as error:
+                    error_msg = str(error)
+                    if "server closed" or "Connection refused" or "timed out" in error_msg:
+                        print(bcolors.FAIL + "Please check your Internet connection and try again" + bcolors.ENDC)
             elif "password authentication failed" in error_msg:
                 print(bcolors.FAIL + "Please check your secret file (~/.secret) and confirm User and Password are correct"+ bcolors.ENDC)
             else:
@@ -276,10 +281,15 @@ class ApiDB:
                 kill, err = kill_tun.communicate()
 
                 tunnel()
-                conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port)
-                df = pd.read_sql(con=conn, sql=query)
-                pd.set_option("display.max_colwidth", 199)
-                return df
+                try:
+                    conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port, connect_timeout=10)
+                    df = pd.read_sql(con=conn, sql=query)
+                    pd.set_option("display.max_colwidth", 199)
+                    return df
+                except psycopg2.OperationalError as error:
+                    error_msg = str(error)
+                    if "server closed" or "Connection refused" or "timed out" in error_msg:
+                        print(bcolors.FAIL + "Please check your Internet connection and try again" + bcolors.ENDC)
             elif "password authentication failed" in error_msg:
                 print(
                     bcolors.FAIL + "Please check your secret file (~/.secret) and confirm User and Password are correct" + bcolors.ENDC)
