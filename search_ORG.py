@@ -1066,6 +1066,8 @@ if __name__ == "__main__":
     # remove Future Warning text - remove in case need to debug
     sys.tracebacklimit = 0
 
+    garbage()
+    
     if get.args.org_name:
         options.org_name()
 
