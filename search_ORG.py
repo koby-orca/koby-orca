@@ -1,8 +1,9 @@
 import pandas as pd
-import psycopg2, argparse, os, subprocess, json,csv,time,sys,re,requests
+import psycopg2, argparse, os, subprocess, json, csv, time, sys, re, requests
 from IPython.display import display
 from pathlib import Path
 from subprocess import check_output
+from bs4 import BeautifulSoup
 import warnings
 
 # remove Future Warning text -
@@ -31,7 +32,8 @@ class get:
     parser.add_argument("-cloudaccount", help="Find the CloudAccount via the Orca cloudaccount_id", nargs=1, metavar=('cloudaccount_id'))
     parser.add_argument("-k8s", help="Find the Kubernetes cluster using the provider_id", nargs=1, metavar=('provider_id'))
     parser.add_argument("-k8s_conn", help="Test k8s connectivity, getting a command to run using <provider_id cluster_name>", nargs=2, metavar=('provider_id','cluster_name'))
-    parser.add_argument("-user", help="user will search for any User in DB", nargs=1, metavar=('email_address'))
+    parser.add_argument("-user", help="Searching a User in the DB", nargs=1, metavar=('email_address'))
+    parser.add_argument("-role", help="Searching a role of a User in the DB", nargs=1, metavar=('email_address'))
     parser.add_argument("-notification", help="Get Notification by Org ID", nargs=1, metavar=('organization_id'))
     parser.add_argument("-preset", help="preset will search any Preset in DB", nargs=1, metavar=('org_name'))
     parser.add_argument("-invite", help="invite will search any Invite with a specific email in DB", nargs=1, metavar=('email_address'))
@@ -40,7 +42,7 @@ class get:
     parser.add_argument("-res_col", help="Provide the next values <provider_id asset_id jwt-token> to create a Reserve Collector", nargs=3, metavar=('provider_id','asset_id','jwt-token'))
     parser.add_argument("-res_s3", help="Provide the next values <provider_id bucket_name jwt-token> to create a S3 Bucket Reserve Collector", nargs=3, metavar=('provider_id','bucket_name','jwt-token'))
     parser.add_argument("-res_fargate", help="Provide the next values <provider_id fargate_asset_id jwt-token> to create a Fargate Cluster Reserve Collector", nargs=3, metavar=('provider_id', 'fargate_asset_id', 'jwt-token'))
-    parser.add_argument('--geo', help="Use Specific DB <us OR eu OR au>", nargs=1, metavar=('region'))
+    parser.add_argument('--geo', help="Use Specific DB <us OR eu OR ap>", nargs=1, metavar=('region'))
     
     args = parser.parse_args()
 
@@ -49,6 +51,7 @@ class get:
     orgID_search = getattr(args, "org_id")
     preset_search = getattr(args, "preset")
     user_search = getattr(args, "user")
+    role_search = getattr(args, "role")
     invite_search = getattr(args, "invite")
     provider_id_search = getattr(args, "prov_id")
     provider_id = getattr(args, "aws_conf")
@@ -224,31 +227,27 @@ class ApiDB:
 
 class options:
 
+
     def org_name():
         orgName_str = get.orgName_search[0]
         
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'au':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == "us":
-                df = ApiDB().query_all_regions(query=f"""select name,id,customer_type from api_organization where lower(name) like '%{orgName_str}%' limit 20""", regions="us")
-            elif get.geo_search[0] == "eu":
-                df = ApiDB().query_all_regions(query=f"""select name,id,customer_type from api_organization where lower(name) like '%{orgName_str}%' limit 20""", regions="eu")
-            elif get.geo_search[0] == "au":
-                df = ApiDB().query_all_regions(query=f"""select name,id,customer_type from api_organization where lower(name) like '%{orgName_str}%' limit 20""",regions="au")
+            df = ApiDB().query_all_regions(query=f"""select name,id,customer_type from api_organization where lower(name) like '%{orgName_str}%' limit 20""", regions=get.geo_search[0])
         else:
             df = ApiDB().query_all_regions(query=f"""select name,id,customer_type from api_organization where lower(name) like '%{orgName_str}%' limit 20""")
-            
+
         if df.empty:
             print(bcolors.FAIL + "No Organization Found" + bcolors.ENDC)
             exit()
         else:
-            html = df.to_html()
-            text_file = open(f"{var.file}", "a+")
-            text_file.write(html)
-            text_file.close()
+            html(df)
+            text = "<strong> Organizations found:</strong> \n\n"
+            txt_html(text)
+
             print(bcolors.OKBLUE + "We found Organization in our search" + bcolors.ENDC)
             display(df)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
@@ -261,31 +260,23 @@ class options:
             print(bcolors.FAIL + "UUID is not valid, please verify the ORG id" + bcolors.ENDC)
         else:
             if get.geo_search != None:
-                if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'au':
+                if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
                     print(
-                        "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au" + bcolors.ENDC)
+                        "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
                     exit()
-                elif get.geo_search[0] == "us":
-                    df5 = ApiDB().query_all_regions(
-                        query=f"""select name,id,customer_type from api_organization where (id) = '{orgID_str}' limit 20""", regions="us")
-                elif get.geo_search[0] == "eu":
-                    df5 = ApiDB().query_all_regions(
-                        query=f"""select name,id,customer_type from api_organization where (id) = '{orgID_str}' limit 20""", regions="eu")
-                elif get.geo_search[0] == "au":
-                    df5 = ApiDB().query_all_regions(
-                        query=f"""select name,id,customer_type from api_organization where (id) = '{orgID_str}' limit 20""", regions="au")
+                else:
+                    df5 = ApiDB().query_all_regions(query=f"""select name,id,customer_type from api_organization where (id) = '{orgID_str}' limit 20""", regions=get.geo_search[0])
             else:
-                df5 = ApiDB().query_all_regions(
-                    query=f"""select name,id,customer_type from api_organization where (id) = '{orgID_str}' limit 20"""
-                )
+                df5 = ApiDB().query_all_regions(query=f"""select name,id,customer_type from api_organization where (id) = '{orgID_str}' limit 20""")
+
             if df5.empty:
                 print(bcolors.FAIL + "No Organization Found with provided ID" + bcolors.ENDC)
                 exit()
             else:
-                html = df5.to_html()
-                text_file = open(f"{var.file}", "a+")
-                text_file.write(html)
-                text_file.close()
+                html(df5)
+                text = "<strong> Organizations found:</strong> \n\n"
+                txt_html(text)
+
                 print(bcolors.OKBLUE + "We found Organization in our search" + bcolors.ENDC)
                 display(df5)
                 print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
@@ -294,16 +285,12 @@ class options:
         k8s_str = get.k8s_search[0]
 
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'au':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == "us":
-                df10 = ApiDB().query_all_regions(query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{k8s_str}' limit 20""", regions="us")
-            elif get.geo_search[0] == "eu":
-                df10 = ApiDB().query_all_regions(query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{k8s_str}' limit 20""", regions="eu")
-            elif get.geo_search[0] == "au":
-                df10 = ApiDB().query_all_regions(query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{k8s_str}' limit 20""", regions="au")
+            else:
+                df10 = ApiDB().query_all_regions(query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{k8s_str}' limit 20""", regions=get.geo_search[0])
         else:
             df10 = ApiDB().query_all_regions(query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{k8s_str}' limit 20""")
         
@@ -313,12 +300,7 @@ class options:
         else:
             account_id = df10['id'][0]
             if get.geo_search != None:
-                if get.geo_search[0] == "us":
-                    df5 = ApiDB().query_all_regions(query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 20""", regions="us")
-                elif get.geo_search[0] == "eu":
-                    df5 = ApiDB().query_all_regions(query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 20""", regions="eu")
-                elif get.geo_search[0] == "au":
-                    df5 = ApiDB().query_all_regions(query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 20""", regions="au")
+                df5 = ApiDB().query_all_regions(query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 20""", regions=get.geo_search[0])
             else:                      
                 df5 = ApiDB().query_all_regions(query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 20""")
             
@@ -326,10 +308,9 @@ class options:
                 print(bcolors.FAIL + "No Kubernetes clusters found" + bcolors.ENDC)
                 exit()
             else:
-                html = df5.to_html()
-                text_file = open(f"{var.file}", "a+")
-                text_file.write(html)
-                text_file.close()
+                html(df5)
+                text = "<strong> Kubernetes clusters found:</strong> \n\n"
+                txt_html(text)
                 print(bcolors.OKBLUE + "We found the next Kubernetes clusters: " + bcolors.ENDC)
                 display(df5)
                 print(bcolors.OKBLUE + "Status - 0 = Discovered, 1 = Onboarded, 2 = Deleted" + bcolors.ENDC)
@@ -345,16 +326,12 @@ class options:
         cluster_name = getattr(args, "k8s_conn")[1]
 
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'au':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == "us":
-                df10 = ApiDB().query_all_regions(query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{provider_id_k8s}' limit 20""", regions="us")
-            elif get.geo_search[0] == "eu":
-                df10 = ApiDB().query_all_regions(query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{provider_id_k8s}' limit 20""", regions="eu")
-            elif get.geo_search[0] == "au":
-                df10 = ApiDB().query_all_regions(query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{provider_id_k8s}' limit 20""", regions="au")
+            else:
+                df10 = ApiDB().query_all_regions(query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{provider_id_k8s}' limit 20""", regions=get.geo_search[0])
         else:
             df10 = ApiDB().query_all_regions(query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{provider_id_k8s}' limit 20""")
 
@@ -364,12 +341,7 @@ class options:
         else:
             account_id = df10['id'][0]
             if get.geo_search != None:
-                if get.geo_search[0] == "us":
-                    df5 = ApiDB().query_all_regions(query=f"""select cluster_name,cluster_type,location from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 20""", regions="us")
-                elif get.geo_search[0] == "eu":
-                    df5 = ApiDB().query_all_regions(query=f"""select cluster_name,cluster_type,location from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 20""", regions="eu")
-                elif get.geo_search[0] == "au":
-                    df5 = ApiDB().query_all_regions(query=f"""select cluster_name,cluster_type,location from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 20""", regions="au")
+                df5 = ApiDB().query_all_regions(query=f"""select cluster_name,cluster_type,location from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 20""", regions=get.geo_search[0])
             else:
                 df5 = ApiDB().query_all_regions(query=f"""select cluster_name,cluster_type,location from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 20""")
 
@@ -387,12 +359,7 @@ class options:
                     cloud_provider = 'gcp'
 
                     if get.geo_search != None:
-                        if get.geo_search[0] == "us":
-                            df8 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{provider_id_k8s}%' limit 20""", regions="us")
-                        elif get.geo_search[0] == "eu":
-                            df8 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{provider_id_k8s}%' limit 20""", regions="eu")
-                        elif get.geo_search[0] == "au":
-                            df8 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{provider_id_k8s}%' limit 20""", regions="au")
+                        df8 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{provider_id_k8s}%' limit 20""", regions=get.geo_search[0])
                     else:
                         df8 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{provider_id_k8s}%' limit 20""")
                     
@@ -420,12 +387,7 @@ class options:
                     cloud_provider = 'aws'
                     
                     if get.geo_search != None:
-                        if get.geo_search[0] == "us":
-                            df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{get.provider_id_k8s}' limit 20""", regions="us")
-                        elif get.geo_search[0] == "eu":
-                            df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{get.provider_id_k8s}' limit 20""", regions="eu")
-                        elif get.geo_search[0] == "au":
-                            df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{get.provider_id_k8s}' limit 20""", regions="au")
+                        df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{get.provider_id_k8s}' limit 20""", regions=get.geo_search[0])
                     else:
                         df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{get.provider_id_k8s}' limit 20""")
                     
@@ -452,16 +414,12 @@ class options:
         cloudaccount_str = get.provider_id_search[0]
 
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'au':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == "us":
-                df6 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info,api_cloudaccount.management_account_id,api_cloudaccount.allowed_regions from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{cloudaccount_str}' limit 20""", regions="us")
-            elif get.geo_search[0] == "eu":
-                df6 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info,api_cloudaccount.management_account_id,api_cloudaccount.allowed_regions from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{cloudaccount_str}' limit 20""", regions="eu")
-            elif get.geo_search[0] == "au":
-                df6 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info,api_cloudaccount.management_account_id,api_cloudaccount.allowed_regions from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{cloudaccount_str}' limit 20""", regions="au")
+            else:
+                df6 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info,api_cloudaccount.management_account_id,api_cloudaccount.allowed_regions from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{cloudaccount_str}' limit 20""", regions=get.geo_search[0])
         else:
             df6 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info,api_cloudaccount.management_account_id,api_cloudaccount.allowed_regions from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{cloudaccount_str}' limit 20""")
         
@@ -469,10 +427,7 @@ class options:
             print(bcolors.FAIL + "No CloudAccount Found with provided ID" + bcolors.ENDC)
             exit()
         else:
-            html = df6.to_html()
-            text_file = open(f"{var.file}", "a+")
-            text_file.write(html)
-            text_file.close()
+            html(df6)
             print(bcolors.OKBLUE + "We found CloudAccount in our search" + bcolors.ENDC)
             display(df6)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
@@ -481,16 +436,12 @@ class options:
         preset_str = get.preset_search[0]
 
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'au':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == "us":
-                df2 = ApiDB().query_all_regions(query=f"""select name,settings from api_accountscansettingspreset where lower(name) like '%{preset_str}%' limit 20""", regions="us")
-            elif get.geo_search[0] == "eu":
-                df2 = ApiDB().query_all_regions(query=f"""select name,settings from api_accountscansettingspreset where lower(name) like '%{preset_str}%' limit 20""", regions="eu")
-            elif get.geo_search[0] == "au":
-                df2 = ApiDB().query_all_regions(query=f"""select name,settings from api_accountscansettingspreset where lower(name) like '%{preset_str}%' limit 20""",regions="au")
+            else:
+                df2 = ApiDB().query_all_regions(query=f"""select name,settings from api_accountscansettingspreset where lower(name) like '%{preset_str}%' limit 20""", region=get.geo_search[0])
         else:
             df2 = ApiDB().query_all_regions(query=f"""select name,settings from api_accountscansettingspreset where lower(name) like '%{preset_str}%' limit 20""")
         
@@ -498,10 +449,7 @@ class options:
             print(bcolors.FAIL + "No Preset Found" + bcolors.ENDC)
             exit()
         else:
-            html = df2.to_html()
-            text_file = open(f"{var.file}", "a+")
-            text_file.write(html)
-            text_file.close()
+            html(df2)
             print(bcolors.OKBLUE + "We found Preset in our search" + bcolors.ENDC)
             display(df2)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
@@ -510,16 +458,12 @@ class options:
         cloudaccount_id_str = get.cloudaccount_id_search[0]
 
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'au':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == "us":
-                df10 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name",api_cloudaccount.name,api_cloudaccount.id,api_cloudaccount.cloud_provider_id,api_cloudaccount.created_time from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (api_cloudaccount.id) = '{cloudaccount_id_str}' limit 20""", regions="us")
-            elif get.geo_search[0] == "eu":
-                df10 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name",api_cloudaccount.name,api_cloudaccount.id,api_cloudaccount.cloud_provider_id,api_cloudaccount.created_time from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (api_cloudaccount.id) = '{cloudaccount_id_str}' limit 20""", regions="eu")
-            elif get.geo_search[0] == "au":
-                df10 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name",api_cloudaccount.name,api_cloudaccount.id,api_cloudaccount.cloud_provider_id,api_cloudaccount.created_time from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (api_cloudaccount.id) = '{cloudaccount_id_str}' limit 20""",regions="au")
+            else:
+                df10 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name",api_cloudaccount.name,api_cloudaccount.id,api_cloudaccount.cloud_provider_id,api_cloudaccount.created_time from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (api_cloudaccount.id) = '{cloudaccount_id_str}' limit 20""", regions=get.geo_search[0])
         else:        
             df10 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name",api_cloudaccount.name,api_cloudaccount.id,api_cloudaccount.cloud_provider_id,api_cloudaccount.created_time from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (api_cloudaccount.id) = '{cloudaccount_id_str}' limit 20""")
         
@@ -527,10 +471,7 @@ class options:
             print(bcolors.FAIL + "No CloudAccount ID Found with provided ID" + bcolors.ENDC)
             exit()
         else:
-            html = df10.to_html()
-            text_file = open(f"{var.file}", "a+")
-            text_file.write(html)
-            text_file.close()
+            html(df10)
             print(bcolors.OKBLUE + "We found CloudAccount ID in our search" + bcolors.ENDC)
             display(df10)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
@@ -542,16 +483,12 @@ class options:
             print(bcolors.FAIL + "UUID is not valid, please verify the ORG id" + bcolors.ENDC)
         
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'au':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == "us":
-                df10 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 20""", regions="us")
-            elif get.geo_search[0] == "eu":
-                df10 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 20""", regions="eu")
-            elif get.geo_search[0] == "au":
-                df10 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 20""",regions="au")
+            else:
+                df10 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 20""", regions=get.geo_search[0])
         else:        
             df10 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 20""")
 
@@ -559,27 +496,43 @@ class options:
             print(bcolors.FAIL + "No Notification Found for provided Organization ID" + bcolors.ENDC)
             exit()
         else:
-            html = df10.to_html()
-            text_file = open(f"{var.file}", "a+")
-            text_file.write(html)
-            text_file.close()
+            html(d10)
             print(bcolors.OKBLUE + "We found next Notifications in our search" + bcolors.ENDC)
             display(df10)
+            print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
+
+    def role():
+        role_str = get.role_search[0]
+        if get.geo_search != None:
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+                print(
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                exit()
+            df = ApiDB().query_all_regions(query=f"""SELECT rbac_rbacrole.organization_id, rbac_rbacrole.name,rbac_rbacrole.permission_groups,rbac_rbacrole.is_custom FROM rbac_rbacrole WHERE id IN ( SELECT rbac_rbacuseraccess.role_id FROM rbac_rbacuseraccess WHERE apiuser_id IN ( SELECT id FROM api_apiuser WHERE  api_apiuser.original_email like '%{role_str}%')) LIMIT 20""", regions=get.geo_search[0])
+        else:
+            df = ApiDB().query_all_regions(query=f"""SELECT rbac_rbacrole.organization_id, org.name, rbac_rbacrole.name,rbac_rbacrole.permission_groups,rbac_rbacrole.is_custom FROM rbac_rbacrole WHERE id IN ( SELECT rbac_rbacuseraccess.role_id FROM rbac_rbacuseraccess WHERE apiuser_id IN ( SELECT id FROM api_apiuser WHERE  api_apiuser.original_email like '%{role_str}%')) LIMIT 20""")
+
+        if df.empty:
+            print(bcolors.FAIL + "No Roles Found" + bcolors.ENDC)
+            exit()
+        else:
+            html(df)
+            text = "<strong> The Next Roles found:</strong> \n\n"
+            txt_html(text)
+
+            print(bcolors.OKBLUE + "We found Roles in our search" + bcolors.ENDC)
+            display(df)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
 
     def user():
         user_str = get.user_search[0]
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'au':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == "us":
-                df3 = ApiDB().query_all_regions(query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 20""", regions="us")
-            elif get.geo_search[0] == "eu":
-                df3 = ApiDB().query_all_regions(query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 20""", regions="eu")
-            elif get.geo_search[0] == "au":
-                df3 = ApiDB().query_all_regions(query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 20""",regions="au")
+            else:
+                df3 = ApiDB().query_all_regions(query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 20""", regions=get.geo_search[0])
         else:
             df3 = ApiDB().query_all_regions(query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 20""")
         
@@ -587,10 +540,7 @@ class options:
             print(bcolors.FAIL + "No User Found" + bcolors.ENDC)
             exit()
         else:
-            html = df3.to_html()
-            text_file = open(f"{var.file}", "a+")
-            text_file.write(html)
-            text_file.close()
+            html(df3)
             print(bcolors.OKBLUE + "We found User in our search" + bcolors.ENDC)
             display(df3)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
@@ -598,16 +548,12 @@ class options:
     def invite():
         invite_str = get.invite_search[0]
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'au':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == "us":
-                df4 = ApiDB().query_all_regions(query=f"""select api_userinvite.email,api_organization.name as "organization_name",api_userinvite.organization_id,api_userinvite.issue_date,'{var.orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite join api_organization on api_organization.id = api_userinvite.organization_id WHERE lower(original_email) like '%{invite_str}%' limit 20""", regions="us")
-            elif get.geo_search[0] == "eu":
-                df4 = ApiDB().query_all_regions(query=f"""select api_userinvite.email,api_organization.name as "organization_name",api_userinvite.organization_id,api_userinvite.issue_date,'{var.orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite join api_organization on api_organization.id = api_userinvite.organization_id WHERE lower(original_email) like '%{invite_str}%' limit 20""", regions="eu")
-            elif get.geo_search[0] == "au":
-                df4 = ApiDB().query_all_regions(query=f"""select api_userinvite.email,api_organization.name as "organization_name",api_userinvite.organization_id,api_userinvite.issue_date,'{var.orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite join api_organization on api_organization.id = api_userinvite.organization_id WHERE lower(original_email) like '%{invite_str}%' limit 20""",regions="au")
+            else:
+                df4 = ApiDB().query_all_regions(query=f"""select api_userinvite.email,api_organization.name as "organization_name",api_userinvite.organization_id,api_userinvite.issue_date,'{var.orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite join api_organization on api_organization.id = api_userinvite.organization_id WHERE lower(original_email) like '%{invite_str}%' limit 20""", regions=get.geo_search[0])
         else:
             df4 = ApiDB().query_all_regions(query=f"""select api_userinvite.email,api_organization.name as "organization_name",api_userinvite.organization_id,api_userinvite.issue_date,'{var.orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite join api_organization on api_organization.id = api_userinvite.organization_id WHERE lower(original_email) like '%{invite_str}%' limit 20""")
         
@@ -615,10 +561,7 @@ class options:
             print(bcolors.FAIL + "No Invite Found" + bcolors.ENDC)
             exit()
         else:
-            html = df4.to_html()
-            text_file = open(f"{var.file}", "a+")
-            text_file.write(html)
-            text_file.close()
+            html(df4)
             print(bcolors.OKBLUE + "We found Invite in our search" + bcolors.ENDC)
             display(df4)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
@@ -626,16 +569,12 @@ class options:
     def aws_conf():
         provider_str = get.provider_id[0]
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'au':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == "us":
-                df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""", regions="us")
-            elif get.geo_search[0] == "eu":
-                df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""", regions="eu")
-            elif get.geo_search[0] == "au":
-                df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""",regions="au")
+            else:
+                df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""", regions=get.geo_search[0])
         else:
             df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""")
         
@@ -693,16 +632,12 @@ class options:
         gcp_str = get.gcp_id[0]
         
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'au':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == "us":
-                df8 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 20""", regions="us")
-            elif get.geo_search[0] == "eu":
-                df8 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 20""", regions="eu")
-            elif get.geo_search[0] == "au":
-                df8 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 20""", regions="au")
+            else:
+                df8 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 20""", regions=get.geo_search[0])
         else:
            df8 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 20""")
         
@@ -750,16 +685,12 @@ class options:
         jwt_token_search = getattr(args, "res_col")[2]
         
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'au':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == "us":
-                df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions="us")
-            elif get.geo_search[0] == "eu":
-                df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions="eu")
-            elif get.geo_search[0] == "au":
-                df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""",regions="au")
+            else:
+                df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions=get.geo_search[0])
         else:
             df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""")
         
@@ -772,14 +703,9 @@ class options:
             login_user, error = process.communicate()
             login_user_str = str(login_user).replace("\\n", "").replace("b'", "").replace("'", "")
             account_id = df9["CloudAccount_id"].to_string(index=False)
-            csv_out = df9.to_csv()
-            text_file = open(f"{var.csv_file}", "a+")
-            text_file.write(csv_out)
-            text_file.close()
+            csv(df9)
 
             df_csv = pd.read_csv(f'{var.csv_file}', skipinitialspace=True)
-            fields = ['region']
-            region = df_csv.region
             location = df_csv.region.to_string(index=False)
             print(bcolors.OKCYAN + "Please open a new iTerm and run next output:" + bcolors.ENDC + "\n")
             print(
@@ -798,16 +724,12 @@ class options:
         jwt_token_search = getattr(args, "res_s3")[2]
 
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'au':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == "us":
-                df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions="us")
-            elif get.geo_search[0] == "eu":
-                df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions="eu")
-            elif get.geo_search[0] == "au":
-                df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions="au")
+            else:
+                df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions=get.geo_search[0])
         else:
             df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""")
 
@@ -820,14 +742,9 @@ class options:
             login_user, error = process.communicate()
             login_user_str = str(login_user).replace("\\n", "").replace("b'", "").replace("'", "")
             account_id = df9["CloudAccount_id"].to_string(index=False)
-            csv_out = df9.to_csv()
-            text_file = open(f"{var.csv_file}", "a+")
-            text_file.write(csv_out)
-            text_file.close()
+            csv(df9)
 
             df_csv = pd.read_csv(f'{var.csv_file}', skipinitialspace=True)
-            fields = ['region']
-            region = df_csv.region
             location = df_csv.region.to_string(index=False)
             print(bcolors.OKCYAN + "Please open a new iTerm and run next output:" + bcolors.ENDC + "\n")
             print(
@@ -845,16 +762,12 @@ class options:
         jwt_token_search = getattr(args, "res_fargate")[2]
 
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'au':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == "us":
-                df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions="us")
-            elif get.geo_search[0] == "eu":
-                df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions="eu")
-            elif get.geo_search[0] == "au":
-                df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions="au")
+            else:
+                df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions=get.geo_search[0])
         else:
             df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""")
         
@@ -867,14 +780,9 @@ class options:
             login_user, error = process.communicate()
             login_user_str = str(login_user).replace("\\n", "").replace("b'", "").replace("'", "")
             account_id = df9["CloudAccount_id"].to_string(index=False)
-            csv_out = df9.to_csv()
-            text_file = open(f"{var.csv_file}", "a+")
-            text_file.write(csv_out)
-            text_file.close()
+            csv(df9)
 
             df_csv = pd.read_csv(f'{var.csv_file}', skipinitialspace=True)
-            fields = ['region']
-            region = df_csv.region
             location = df_csv.region.to_string(index=False)
             print(bcolors.OKCYAN + "Please open a new iTerm and run next output:" + bcolors.ENDC + "\n")
             print(
@@ -1061,7 +969,37 @@ def garbage():
         os.remove(var.csv_file)
         fle = Path(f"{var.csv_file}")
         fle.touch(exist_ok=True)
-        
+
+def html(df):
+    html = df.to_html()
+    text_file = open(f"{var.file}", "a+")
+    text_file.write(html)
+    text_file.close()
+
+def csv(df):
+    csv_out = df.to_csv()
+    text_file = open(f"{var.csv_file}", "a+")
+    text_file.write(csv_out)
+    text_file.close()
+
+def txt_html_end(text):
+    text = text
+    soup = BeautifulSoup(text, "html.parser")
+
+    with open(var.file, "a", encoding='utf-8') as file:
+        # prettify the soup object and convert it into a string
+        file.write(str(soup.prettify()))
+
+def txt_html(text):
+    text = text
+    soup = BeautifulSoup(text, "html.parser")
+
+    with open(var.file, "r+", encoding='utf-8') as file:
+        # prettify the soup object and convert it into a string
+        content = file.read()
+        file.seek(0, 0)
+        file.write(str(soup.prettify()) + content)
+
 if __name__ == "__main__":
     # remove Future Warning text - remove in case need to debug
     sys.tracebacklimit = 0
@@ -1091,6 +1029,9 @@ if __name__ == "__main__":
 
     if get.args.notification:
         options.notification()
+
+    if get.args.role:
+        options.role()
 
     if get.args.user:
         options.user()
