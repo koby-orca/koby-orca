@@ -510,7 +510,7 @@ class options:
                 exit()
             df = ApiDB().query_all_regions(query=f"""SELECT rbac_rbacrole.organization_id, rbac_rbacrole.name,rbac_rbacrole.permission_groups,rbac_rbacrole.is_custom FROM rbac_rbacrole WHERE id IN ( SELECT rbac_rbacuseraccess.role_id FROM rbac_rbacuseraccess WHERE apiuser_id IN ( SELECT id FROM api_apiuser WHERE  api_apiuser.original_email like '%{role_str}%')) LIMIT 20""", regions=get.geo_search[0])
         else:
-            df = ApiDB().query_all_regions(query=f"""SELECT rbac_rbacrole.organization_id, org.name, rbac_rbacrole.name,rbac_rbacrole.permission_groups,rbac_rbacrole.is_custom FROM rbac_rbacrole WHERE id IN ( SELECT rbac_rbacuseraccess.role_id FROM rbac_rbacuseraccess WHERE apiuser_id IN ( SELECT id FROM api_apiuser WHERE  api_apiuser.original_email like '%{role_str}%')) LIMIT 20""")
+            df = ApiDB().query_all_regions(query=f"""SELECT rbac_rbacrole.organization_id, rbac_rbacrole.name,rbac_rbacrole.permission_groups,rbac_rbacrole.is_custom FROM rbac_rbacrole WHERE id IN ( SELECT rbac_rbacuseraccess.role_id FROM rbac_rbacuseraccess WHERE apiuser_id IN ( SELECT id FROM api_apiuser WHERE  api_apiuser.original_email like '%{role_str}%')) LIMIT 20""")
 
         if df.empty:
             print(bcolors.FAIL + "No Roles Found" + bcolors.ENDC)
