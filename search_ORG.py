@@ -598,19 +598,19 @@ class options:
                 print(
                     f"""{bcolors.OKCYAN}Please Copy the next output to the aws config file in:{bcolors.ENDC} {var.aws_file}
 
-        [profile {org_name_1}_{provider_str}]
-        source_profile = production
-        role_arn = {aws_role_arn_1}
-        region = us-east-1
-        external_id = {role_external_id_1}
+[profile {org_name_1}_{provider_str}]
+source_profile = production
+role_arn = {aws_role_arn_1}
+region = us-east-1
+external_id = {role_external_id_1}
 
-        [profile {org_name_2}_{provider_str}]
-        source_profile = production
-        role_arn = {aws_role_arn_2}
-        region = us-east-1
-        external_id = {role_external_id_2}
-        """
-                )
+[profile {org_name_2}_{provider_str}]
+source_profile = production
+role_arn = {aws_role_arn_2}
+region = us-east-1
+external_id = {role_external_id_2}
+"""
+)
 
         else:
             aws_role_arn = df7["aws_role_arn"][0]
