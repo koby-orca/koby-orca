@@ -620,13 +620,13 @@ external_id = {role_external_id_2}
             print(
                 f"""{bcolors.OKCYAN}Please Copy the next output to the aws config file in:{bcolors.ENDC} {var.aws_file}
 
-        [profile {org_name}_{provider_str}]
-        source_profile = production
-        role_arn = {aws_role_arn}
-        region = us-east-1
-        external_id = {role_external_id}
-        """
-            )
+[profile {org_name}_{provider_str}]
+source_profile = production
+role_arn = {aws_role_arn}
+region = us-east-1
+external_id = {role_external_id}
+"""
+)
 
     def gcp_conf():
         gcp_str = get.gcp_id[0]
