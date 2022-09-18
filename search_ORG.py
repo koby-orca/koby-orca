@@ -9,7 +9,7 @@ import warnings
 # remove Future Warning text -
 warnings.filterwarnings('ignore')
 # remove in case need to debug
-sys.tracebacklimit = 0
+#sys.tracebacklimit = 0
 
 class bcolors:
     HEADER = "\033[95m"
@@ -74,7 +74,7 @@ class ApiDB:
 
     def query_api_db(self, query, port):
         # remove Future Warning text - remove in case need to debug
-        sys.tracebacklimit = 0
+        #sys.tracebacklimit = 0
 
         vals = get_val(get.home_folder + "/.secret/secrets.json")
         user = vals['user']
@@ -138,7 +138,7 @@ class ApiDB:
 
     def query_api_db_ap(self, query, port):
         # remove Future Warning text - remove in case need to debug
-        sys.tracebacklimit = 0
+        #sys.tracebacklimit = 0
 
         vals = get_val(get.home_folder + "/.secret/secrets.json")
         user = vals['user']
@@ -192,7 +192,7 @@ class ApiDB:
     def query_all_regions(self, query, regions="all"):
         aws_connect()
         tunnel()
-        sys.tracebacklimit = 0
+        #sys.tracebacklimit = 0
         ports = []
         if regions == "all":
             ports = [9000, 9001, 9002]
@@ -387,9 +387,9 @@ class options:
                     cloud_provider = 'aws'
                     
                     if get.geo_search != None:
-                        df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{get.provider_id_k8s}' limit 20""", regions=get.geo_search[0])
+                        df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_k8s}' limit 20""", regions=get.geo_search[0])
                     else:
-                        df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{get.provider_id_k8s}' limit 20""")
+                        df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_k8s}' limit 20""")
                     
                     aws_role_arn = df7["aws_role_arn"][0]
                     role_external_id = df7["role_external_id"][0]
@@ -1002,7 +1002,7 @@ def txt_html(text):
 
 if __name__ == "__main__":
     # remove Future Warning text - remove in case need to debug
-    sys.tracebacklimit = 0
+    #sys.tracebacklimit = 0
 
     garbage()
     
