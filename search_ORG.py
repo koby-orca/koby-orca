@@ -1,5 +1,5 @@
 import pandas as pd
-import psycopg2, argparse, os, subprocess, json, csv, time, sys, re, requests
+import psycopg2, argparse, os, subprocess, json, csv, time, sys, re, requests, boto3
 from IPython.display import display
 from pathlib import Path
 from subprocess import check_output
@@ -42,7 +42,9 @@ class get:
     parser.add_argument("-res_col", help="Provide the next values <provider_id asset_id jwt-token> to create a Reserve Collector", nargs=3, metavar=('provider_id','asset_id','jwt-token'))
     parser.add_argument("-res_s3", help="Provide the next values <provider_id bucket_name jwt-token> to create a S3 Bucket Reserve Collector", nargs=3, metavar=('provider_id','bucket_name','jwt-token'))
     parser.add_argument("-res_fargate", help="Provide the next values <provider_id fargate_asset_id jwt-token> to create a Fargate Cluster Reserve Collector", nargs=3, metavar=('provider_id', 'fargate_asset_id', 'jwt-token'))
+    parser.add_argument("-allow_reg", help="", nargs=1, metavar=('profile'))
     parser.add_argument('--geo', help="Use Specific DB <us OR eu OR ap>", nargs=1, metavar=('region'))
+    
     
     args = parser.parse_args()
 
@@ -59,6 +61,7 @@ class get:
     cloudaccount_id_search = getattr(args, "cloudaccount")
     notification_search = getattr(args, "notification")
     k8s_search = getattr(args, "k8s")
+    profile_search = getattr(args, "allow_reg")
 
 
     home_folder = os.environ.get("HOME")
@@ -663,15 +666,14 @@ external_id = {role_external_id}
         print(bcolors.OKBLUE + "We found GCP Project in our search" + bcolors.ENDC)
         print(bcolors.WARNING + json + bcolors.ENDC + bcolors.OKGREEN + " Was created successfully" + bcolors.ENDC)
         print(
-            f"""
-        {bcolors.OKCYAN}To active the .json and be able to run gcloud commands
-        Please open a new iTerm and run next output:{bcolors.ENDC}
+            f"""{bcolors.OKCYAN}To active the .json and be able to run gcloud commands
+Please open a new iTerm and run next output:{bcolors.ENDC}
 
-        gcloud auth activate-service-account --key-file={json}
-        gcloud config configurations create {aname}
-        gcloud config set account {client_email_str}
-        gcloud config set project {aname}
-        """
+gcloud auth activate-service-account --key-file={json}
+gcloud config configurations create {aname}
+gcloud config set account {client_email_str}
+gcloud config set project {aname}
+"""
         )
 
     def res_col():
@@ -790,6 +792,34 @@ external_id = {role_external_id}
             os.remove(var.csv_file)
             exit()
 
+    def allow_reg():
+        profile_str = get.profile_search[0]
+        
+        bashCommand = f"cat /Users/kobykagan/.aws/config | grep -w 'profile {profile_str}'"
+        process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+        result, error = process.communicate()
+        
+        if len(result) == 0:
+            print(f"No Profile with the name {profile_str}")
+            exit()
+        else:
+            pass
+
+        regions = ['us-east-2', 'us-east-1', 'us-west-2', 'us-west-1', 'sa-east-1', 'eu-west-3', 'eu-west-2', 'eu-west-1', 'eu-north-1', 'eu-central-1', 'ca-central-1', 'ap-southeast-2', 'ap-southeast-1', 'ap-south-1', 'ap-northeast-3', 'ap-northeast-2', 'ap-northeast-1', 'sa-east-1']
+        a_reg = []
+
+        for reg in regions:
+            ec2 = boto3.session.Session(profile_name=profile_str, region_name=reg).client(service_name='ec2')
+            try:
+                ec2.describe_regions()
+                a_reg.append(reg)
+            except:
+                pass
+
+        if regions == a_reg: 
+            print("All Regions allowed")
+        else:
+            print(f"Allowed Regions: {a_reg}")
 
 def config_bastion():
     bastion = subprocess.Popen("ls -l ~/.ssh | grep config_bastion", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -1006,6 +1036,9 @@ if __name__ == "__main__":
 
     garbage()
     
+    if get.args.allow_reg:
+        options.allow_reg()
+        
     if get.args.org_name:
         options.org_name()
 
