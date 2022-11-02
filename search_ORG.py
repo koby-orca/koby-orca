@@ -42,7 +42,7 @@ class get:
     parser.add_argument("-res_col", help="Provide the next values <provider_id asset_id jwt-token> to create a Reserve Collector", nargs=3, metavar=('provider_id','asset_id','jwt-token'))
     parser.add_argument("-res_s3", help="Provide the next values <provider_id bucket_name jwt-token> to create a S3 Bucket Reserve Collector", nargs=3, metavar=('provider_id','bucket_name','jwt-token'))
     parser.add_argument("-res_fargate", help="Provide the next values <provider_id fargate_asset_id jwt-token> to create a Fargate Cluster Reserve Collector", nargs=3, metavar=('provider_id', 'fargate_asset_id', 'jwt-token'))
-    parser.add_argument("-allow_reg", help="", nargs=1, metavar=('profile'))
+    # parser.add_argument("-allow_reg", help="", nargs=1, metavar=('profile'))
     parser.add_argument('--geo', help="Use Specific DB <us OR eu OR ap>", nargs=1, metavar=('region'))
     
     
@@ -1036,8 +1036,8 @@ if __name__ == "__main__":
 
     garbage()
     
-    if get.args.allow_reg:
-        options.allow_reg()
+    # if get.args.allow_reg:
+    #     options.allow_reg()
         
     if get.args.org_name:
         options.org_name()
