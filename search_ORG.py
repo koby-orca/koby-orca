@@ -37,7 +37,7 @@ class get:
     parser.add_argument("-notification", help="Get Notification by Org ID", nargs=1, metavar=('organization_id'))
     parser.add_argument("-preset", help="preset will search any Preset in DB", nargs=1, metavar=('org_name'))
     parser.add_argument("-invite", help="invite will search any Invite with a specific email in DB", nargs=1, metavar=('email_address'))
-    parser.add_argument("-aws_conf", help="Provide aws_config data using the provider ID, in order to use aws cli", nargs=1, metavar=('provider_id'))
+    # parser.add_argument("-aws_conf", help="Provide aws_config data using the provider ID, in order to use aws cli", nargs=1, metavar=('provider_id'))
     parser.add_argument("-gcp_conf", help="Provide gcp_config data using the GCP Project name, in order to use gcloud cli", nargs=1, metavar=('provider_id'))
     parser.add_argument("-res_col", help="Provide the next values <provider_id asset_id jwt-token> to create a Reserve Collector", nargs=3, metavar=('provider_id','asset_id','jwt-token'))
     parser.add_argument("-res_s3", help="Provide the next values <provider_id bucket_name jwt-token> to create a S3 Bucket Reserve Collector", nargs=3, metavar=('provider_id','bucket_name','jwt-token'))
@@ -1072,8 +1072,8 @@ if __name__ == "__main__":
     if get.args.invite:
         options.invite()
 
-    if get.args.aws_conf:
-        options.aws_conf()
+    # if get.args.aws_conf:
+    #     options.aws_conf()
 
     if get.args.gcp_conf:
         options.gcp_conf()
