@@ -56,12 +56,12 @@ class get:
     role_search = getattr(args, "role")
     invite_search = getattr(args, "invite")
     provider_id_search = getattr(args, "prov_id")
-    provider_id = getattr(args, "aws_conf")
+    # provider_id = getattr(args, "aws_conf")
     gcp_id = getattr(args, "gcp_conf")
     cloudaccount_id_search = getattr(args, "cloudaccount")
     notification_search = getattr(args, "notification")
     k8s_search = getattr(args, "k8s")
-    profile_search = getattr(args, "allow_reg")
+    # profile_search = getattr(args, "allow_reg")
 
 
     home_folder = os.environ.get("HOME")
@@ -569,67 +569,67 @@ class options:
             display(df4)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
 
-    def aws_conf():
-        provider_str = get.provider_id[0]
-        if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
-                print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
-                exit()
-            else:
-                df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""", regions=get.geo_search[0])
-        else:
-            df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""")
-        
-        if df7.empty:
-            print(bcolors.FAIL + "No provider ID Found" + bcolors.ENDC)
-            exit()
-        # rare scenrio in case the same account exist in more then 1 region (we should not have it)
-        elif len(df7.index) > 1:
-            double = df7["organization_name"][1]
-
-            if double != "":
-                aws_role_arn_1 = df7["aws_role_arn"][0]
-                role_external_id_1 = df7["role_external_id"][0]
-                org_name_1_tmp = df7["organization_name"][0]
-                org_name_1 = org_name_1_tmp.replace(' ', '_')
-                aws_role_arn_2 = df7["aws_role_arn"][1]
-                role_external_id_2 = df7["role_external_id"][1]
-                org_name_2_tmp = df7["organization_name"][1]
-                org_name_2 = org_name_2_tmp.replace(' ', '_')
-
-                print(
-                    f"""{bcolors.OKCYAN}Please Copy the next output to the aws config file in:{bcolors.ENDC} {var.aws_file}
-
-[profile {org_name_1}_{provider_str}]
-source_profile = production
-role_arn = {aws_role_arn_1}
-region = us-east-1
-external_id = {role_external_id_1}
-
-[profile {org_name_2}_{provider_str}]
-source_profile = production
-role_arn = {aws_role_arn_2}
-region = us-east-1
-external_id = {role_external_id_2}
-"""
-)
-
-        else:
-            aws_role_arn = df7["aws_role_arn"][0]
-            role_external_id = df7["role_external_id"][0]
-            org_name_tmp = df7["organization_name"][0]
-            org_name = org_name_tmp.replace(' ', '_')
-            print(
-                f"""{bcolors.OKCYAN}Please Copy the next output to the aws config file in:{bcolors.ENDC} {var.aws_file}
-
-[profile {org_name}_{provider_str}]
-source_profile = production
-role_arn = {aws_role_arn}
-region = us-east-1
-external_id = {role_external_id}
-"""
-)
+#     def aws_conf():
+#         provider_str = get.provider_id[0]
+#         if get.geo_search != None:
+#             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+#                 print(
+#                     "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+#                 exit()
+#             else:
+#                 df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""", regions=get.geo_search[0])
+#         else:
+#             df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""")
+#         
+#         if df7.empty:
+#             print(bcolors.FAIL + "No provider ID Found" + bcolors.ENDC)
+#             exit()
+#         # rare scenrio in case the same account exist in more then 1 region (we should not have it)
+#         elif len(df7.index) > 1:
+#             double = df7["organization_name"][1]
+# 
+#             if double != "":
+#                 aws_role_arn_1 = df7["aws_role_arn"][0]
+#                 role_external_id_1 = df7["role_external_id"][0]
+#                 org_name_1_tmp = df7["organization_name"][0]
+#                 org_name_1 = org_name_1_tmp.replace(' ', '_')
+#                 aws_role_arn_2 = df7["aws_role_arn"][1]
+#                 role_external_id_2 = df7["role_external_id"][1]
+#                 org_name_2_tmp = df7["organization_name"][1]
+#                 org_name_2 = org_name_2_tmp.replace(' ', '_')
+# 
+#                 print(
+#                     f"""{bcolors.OKCYAN}Please Copy the next output to the aws config file in:{bcolors.ENDC} {var.aws_file}
+# 
+# [profile {org_name_1}_{provider_str}]
+# source_profile = production
+# role_arn = {aws_role_arn_1}
+# region = us-east-1
+# external_id = {role_external_id_1}
+# 
+# [profile {org_name_2}_{provider_str}]
+# source_profile = production
+# role_arn = {aws_role_arn_2}
+# region = us-east-1
+# external_id = {role_external_id_2}
+# """
+# )
+# 
+#         else:
+#             aws_role_arn = df7["aws_role_arn"][0]
+#             role_external_id = df7["role_external_id"][0]
+#             org_name_tmp = df7["organization_name"][0]
+#             org_name = org_name_tmp.replace(' ', '_')
+#             print(
+#                 f"""{bcolors.OKCYAN}Please Copy the next output to the aws config file in:{bcolors.ENDC} {var.aws_file}
+# 
+# [profile {org_name}_{provider_str}]
+# source_profile = production
+# role_arn = {aws_role_arn}
+# region = us-east-1
+# external_id = {role_external_id}
+# """
+# )
 
     def gcp_conf():
         gcp_str = get.gcp_id[0]
@@ -792,34 +792,34 @@ gcloud config set project {aname}
             os.remove(var.csv_file)
             exit()
 
-    def allow_reg():
-        profile_str = get.profile_search[0]
-        
-        bashCommand = f"cat /Users/kobykagan/.aws/config | grep -w 'profile {profile_str}'"
-        process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
-        result, error = process.communicate()
-        
-        if len(result) == 0:
-            print(f"No Profile with the name {profile_str}")
-            exit()
-        else:
-            pass
-
-        regions = ['us-east-2', 'us-east-1', 'us-west-2', 'us-west-1', 'sa-east-1', 'eu-west-3', 'eu-west-2', 'eu-west-1', 'eu-north-1', 'eu-central-1', 'ca-central-1', 'ap-southeast-2', 'ap-southeast-1', 'ap-south-1', 'ap-northeast-3', 'ap-northeast-2', 'ap-northeast-1', 'sa-east-1']
-        a_reg = []
-
-        for reg in regions:
-            ec2 = boto3.session.Session(profile_name=profile_str, region_name=reg).client(service_name='ec2')
-            try:
-                ec2.describe_regions()
-                a_reg.append(reg)
-            except:
-                pass
-
-        if regions == a_reg: 
-            print("All Regions allowed")
-        else:
-            print(f"Allowed Regions: {a_reg}")
+    # def allow_reg():
+    #     profile_str = get.profile_search[0]
+    #     
+    #     bashCommand = f"cat /Users/kobykagan/.aws/config | grep -w 'profile {profile_str}'"
+    #     process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+    #     result, error = process.communicate()
+    #     
+    #     if len(result) == 0:
+    #         print(f"No Profile with the name {profile_str}")
+    #         exit()
+    #     else:
+    #         pass
+    # 
+    #     regions = ['us-east-2', 'us-east-1', 'us-west-2', 'us-west-1', 'sa-east-1', 'eu-west-3', 'eu-west-2', 'eu-west-1', 'eu-north-1', 'eu-central-1', 'ca-central-1', 'ap-southeast-2', 'ap-southeast-1', 'ap-south-1', 'ap-northeast-3', 'ap-northeast-2', 'ap-northeast-1', 'sa-east-1']
+    #     a_reg = []
+    # 
+    #     for reg in regions:
+    #         ec2 = boto3.session.Session(profile_name=profile_str, region_name=reg).client(service_name='ec2')
+    #         try:
+    #             ec2.describe_regions()
+    #             a_reg.append(reg)
+    #         except:
+    #             pass
+    # 
+    #     if regions == a_reg: 
+    #         print("All Regions allowed")
+    #     else:
+    #         print(f"Allowed Regions: {a_reg}")
 
 def config_bastion():
     bastion = subprocess.Popen("ls -l ~/.ssh | grep config_bastion", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
