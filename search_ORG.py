@@ -37,12 +37,12 @@ class get:
     parser.add_argument("-notification", help="Get Notification by Org ID", nargs=1, metavar=('organization_id'))
     parser.add_argument("-preset", help="preset will search any Preset in DB", nargs=1, metavar=('org_name'))
     parser.add_argument("-invite", help="invite will search any Invite with a specific email in DB", nargs=1, metavar=('email_address'))
-    # parser.add_argument("-aws_conf", help="Provide aws_config data using the provider ID, in order to use aws cli", nargs=1, metavar=('provider_id'))
+    parser.add_argument("-aws_conf", help="Provide aws_config data using the provider ID, in order to use aws cli", nargs=1, metavar=('provider_id'))
     parser.add_argument("-gcp_conf", help="Provide gcp_config data using the GCP Project name, in order to use gcloud cli", nargs=1, metavar=('provider_id'))
     parser.add_argument("-res_col", help="Provide the next values <provider_id asset_id jwt-token> to create a Reserve Collector", nargs=3, metavar=('provider_id','asset_id','jwt-token'))
     parser.add_argument("-res_s3", help="Provide the next values <provider_id bucket_name jwt-token> to create a S3 Bucket Reserve Collector", nargs=3, metavar=('provider_id','bucket_name','jwt-token'))
     parser.add_argument("-res_fargate", help="Provide the next values <provider_id fargate_asset_id jwt-token> to create a Fargate Cluster Reserve Collector", nargs=3, metavar=('provider_id', 'fargate_asset_id', 'jwt-token'))
-    # parser.add_argument("-allow_reg", help="", nargs=1, metavar=('profile'))
+    parser.add_argument("-allow_reg", help="", nargs=1, metavar=('profile'))
     parser.add_argument('--geo', help="Use Specific DB <us OR eu OR ap>", nargs=1, metavar=('region'))
     
     
@@ -56,12 +56,12 @@ class get:
     role_search = getattr(args, "role")
     invite_search = getattr(args, "invite")
     provider_id_search = getattr(args, "prov_id")
-    # provider_id = getattr(args, "aws_conf")
+    provider_id = getattr(args, "aws_conf")
     gcp_id = getattr(args, "gcp_conf")
     cloudaccount_id_search = getattr(args, "cloudaccount")
     notification_search = getattr(args, "notification")
     k8s_search = getattr(args, "k8s")
-    # profile_search = getattr(args, "allow_reg")
+    profile_search = getattr(args, "allow_reg")
 
 
     home_folder = os.environ.get("HOME")
@@ -569,68 +569,90 @@ class options:
             display(df4)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
 
-#     def aws_conf():
-#         provider_str = get.provider_id[0]
-#         if get.geo_search != None:
-#             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
-#                 print(
-#                     "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
-#                 exit()
-#             else:
-#                 df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""", regions=get.geo_search[0])
-#         else:
-#             df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""")
-#         
-#         if df7.empty:
-#             print(bcolors.FAIL + "No provider ID Found" + bcolors.ENDC)
-#             exit()
-#         # rare scenrio in case the same account exist in more then 1 region (we should not have it)
-#         elif len(df7.index) > 1:
-#             double = df7["organization_name"][1]
-# 
-#             if double != "":
-#                 aws_role_arn_1 = df7["aws_role_arn"][0]
-#                 role_external_id_1 = df7["role_external_id"][0]
-#                 org_name_1_tmp = df7["organization_name"][0]
-#                 org_name_1 = org_name_1_tmp.replace(' ', '_')
-#                 aws_role_arn_2 = df7["aws_role_arn"][1]
-#                 role_external_id_2 = df7["role_external_id"][1]
-#                 org_name_2_tmp = df7["organization_name"][1]
-#                 org_name_2 = org_name_2_tmp.replace(' ', '_')
-# 
-#                 print(
-#                     f"""{bcolors.OKCYAN}Please Copy the next output to the aws config file in:{bcolors.ENDC} {var.aws_file}
-# 
-# [profile {org_name_1}_{provider_str}]
-# source_profile = production
-# role_arn = {aws_role_arn_1}
-# region = us-east-1
-# external_id = {role_external_id_1}
-# 
-# [profile {org_name_2}_{provider_str}]
-# source_profile = production
-# role_arn = {aws_role_arn_2}
-# region = us-east-1
-# external_id = {role_external_id_2}
-# """
-# )
-# 
-#         else:
-#             aws_role_arn = df7["aws_role_arn"][0]
-#             role_external_id = df7["role_external_id"][0]
-#             org_name_tmp = df7["organization_name"][0]
-#             org_name = org_name_tmp.replace(' ', '_')
-#             print(
-#                 f"""{bcolors.OKCYAN}Please Copy the next output to the aws config file in:{bcolors.ENDC} {var.aws_file}
-# 
-# [profile {org_name}_{provider_str}]
-# source_profile = production
-# role_arn = {aws_role_arn}
-# region = us-east-1
-# external_id = {role_external_id}
-# """
-# )
+    def aws_conf():
+        provider_str = get.provider_id[0]
+        if get.geo_search != None:
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+                print(
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                exit()
+            else:
+                df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""", regions=get.geo_search[0])
+        else:
+            df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""")
 
+        org_name_tmp = df7["organization_name"][0]
+        org_name = org_name_tmp.replace(' ', '_').lower()
+        df8 = ApiDB().query_all_regions(
+            query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where lower(name) like '%{org_name}%' limit 20""")
+
+
+        if df7.empty:
+            print(bcolors.FAIL + "No provider ID Found" + bcolors.ENDC)
+            exit()
+        # rare scenrio in case the same account exist in more then 1 region (we should not have it)
+        elif len(df7.index) > 1:
+            double = df7["organization_name"][1]
+
+            if double != "":
+                aws_role_arn_1 = df7["aws_role_arn"][0]
+                role_external_id_1 = df7["role_external_id"][0]
+                org_name_1_tmp = df7["organization_name"][0]
+                org_name_1 = org_name_1_tmp.replace(' ', '_')
+                aws_role_arn_2 = df7["aws_role_arn"][1]
+                role_external_id_2 = df7["role_external_id"][1]
+                org_name_2_tmp = df7["organization_name"][1]
+                org_name_2 = org_name_2_tmp.replace(' ', '_')
+
+                print(
+                    f"""{bcolors.OKCYAN}Please Copy the next output to the aws config file in:{bcolors.ENDC} {var.aws_file}
+
+[profile {org_name_1}_{provider_str}]
+source_profile = production
+role_arn = {aws_role_arn_1}
+region = us-east-1
+external_id = {role_external_id_1}
+
+[profile {org_name_2}_{provider_str}]
+source_profile = production
+role_arn = {aws_role_arn_2}
+region = us-east-1
+external_id = {role_external_id_2}
+"""
+)
+
+        else:
+            aws_role_arn = df7["aws_role_arn"][0]
+            role_external_id = df7["role_external_id"][0]
+            org_name_tmp = df7["organization_name"][0]
+            org_name = org_name_tmp.replace(' ', '_')
+            print(
+                f"""{bcolors.OKCYAN}Please Copy the next output to the aws config file in:{bcolors.ENDC} {var.aws_file}
+
+[profile {org_name}_{provider_str}]
+source_profile = production
+role_arn = {aws_role_arn}
+region = us-east-1
+external_id = {role_external_id}
+"""
+)
+
+        if not df8.empty:
+            org_name_tmp = df7["organization_name"][0]
+            org_name = org_name_tmp.replace(' ', '_')
+            aws_role_arn = df8["scanneraccount_role_arn"][0]
+            role_external_id = df8["scanneraccount_role_external_id"][0]
+            print(
+                f"""{bcolors.OKCYAN}Please note that we found In-Account Service Account:{bcolors.ENDC}
+
+[profile {org_name}_InAccount_{provider_str}]
+source_profile = production
+role_arn = {aws_role_arn}
+region = us-east-1
+external_id = {role_external_id}
+"""
+)
+            
     def gcp_conf():
         gcp_str = get.gcp_id[0]
         
@@ -792,34 +814,34 @@ gcloud config set project {aname}
             os.remove(var.csv_file)
             exit()
 
-    # def allow_reg():
-    #     profile_str = get.profile_search[0]
-    #     
-    #     bashCommand = f"cat /Users/kobykagan/.aws/config | grep -w 'profile {profile_str}'"
-    #     process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
-    #     result, error = process.communicate()
-    #     
-    #     if len(result) == 0:
-    #         print(f"No Profile with the name {profile_str}")
-    #         exit()
-    #     else:
-    #         pass
-    # 
-    #     regions = ['us-east-2', 'us-east-1', 'us-west-2', 'us-west-1', 'sa-east-1', 'eu-west-3', 'eu-west-2', 'eu-west-1', 'eu-north-1', 'eu-central-1', 'ca-central-1', 'ap-southeast-2', 'ap-southeast-1', 'ap-south-1', 'ap-northeast-3', 'ap-northeast-2', 'ap-northeast-1', 'sa-east-1']
-    #     a_reg = []
-    # 
-    #     for reg in regions:
-    #         ec2 = boto3.session.Session(profile_name=profile_str, region_name=reg).client(service_name='ec2')
-    #         try:
-    #             ec2.describe_regions()
-    #             a_reg.append(reg)
-    #         except:
-    #             pass
-    # 
-    #     if regions == a_reg: 
-    #         print("All Regions allowed")
-    #     else:
-    #         print(f"Allowed Regions: {a_reg}")
+    def allow_reg():
+        profile_str = get.profile_search[0]
+
+        bashCommand = f"cat /Users/kobykagan/.aws/config | grep -w 'profile {profile_str}'"
+        process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+        result, error = process.communicate()
+
+        if len(result) == 0:
+            print(f"No Profile with the name {profile_str}")
+            exit()
+        else:
+            pass
+
+        regions = ['us-east-2', 'us-east-1', 'us-west-2', 'us-west-1', 'sa-east-1', 'eu-west-3', 'eu-west-2', 'eu-west-1', 'eu-north-1', 'eu-central-1', 'ca-central-1', 'ap-southeast-2', 'ap-southeast-1', 'ap-south-1', 'ap-northeast-3', 'ap-northeast-2', 'ap-northeast-1', 'sa-east-1']
+        a_reg = []
+
+        for reg in regions:
+            ec2 = boto3.session.Session(profile_name=profile_str, region_name=reg).client(service_name='ec2')
+            try:
+                ec2.describe_regions()
+                a_reg.append(reg)
+            except:
+                pass
+
+        if regions == a_reg: 
+            print("All Regions allowed")
+        else:
+            print(f"Allowed Regions: {a_reg}")
 
 def config_bastion():
     bastion = subprocess.Popen("ls -l ~/.ssh | grep config_bastion", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -1036,8 +1058,8 @@ if __name__ == "__main__":
 
     garbage()
     
-    # if get.args.allow_reg:
-    #     options.allow_reg()
+    if get.args.allow_reg:
+        options.allow_reg()
         
     if get.args.org_name:
         options.org_name()
@@ -1072,8 +1094,8 @@ if __name__ == "__main__":
     if get.args.invite:
         options.invite()
 
-    # if get.args.aws_conf:
-    #     options.aws_conf()
+    if get.args.aws_conf:
+        options.aws_conf()
 
     if get.args.gcp_conf:
         options.gcp_conf()
