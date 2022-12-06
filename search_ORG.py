@@ -637,7 +637,7 @@ external_id = {role_external_id}
 """
 )
 
-        if not df8.empty:
+        if not df8.empty and df8["scanneraccount_role_arn"][0] != None:
             org_name_tmp = df7["organization_name"][0]
             org_name = org_name_tmp.replace(' ', '_')
             aws_role_arn = df8["scanneraccount_role_arn"][0]
