@@ -36,7 +36,7 @@ class get:
     parser.add_argument("-role", help="Searching a role of a User in the DB", nargs=1, metavar=('email_address'))
     parser.add_argument("-notification", help="Get Notification by Org ID", nargs=1, metavar=('organization_id'))
     parser.add_argument("-preset", help="preset will search any Preset in DB", nargs=1, metavar=('org_name'))
-    parser.add_argument("-invite", help="invite will search any Invite with a specific email in DB", nargs=1, metavar=('email_address'))
+    # parser.add_argument("-invite", help="invite will search any Invite with a specific email in DB", nargs=1, metavar=('email_address'))
     parser.add_argument("-aws_conf", help="Provide aws_config data using the provider ID, in order to use aws cli", nargs=1, metavar=('provider_id'))
     parser.add_argument("-gcp_conf", help="Provide gcp_config data using the GCP Project name, in order to use gcloud cli", nargs=1, metavar=('provider_id'))
     parser.add_argument("-res_col", help="Provide the next values <provider_id asset_id jwt-token> to create a Reserve Collector", nargs=3, metavar=('provider_id','asset_id','jwt-token'))
@@ -45,8 +45,7 @@ class get:
     # parser.add_argument("-allow_reg", help="Checking Allowed regions - using devenv_customer_access", nargs=1, metavar=('profile'))
     parser.add_argument("-allow_reg", help="Checking Allowed regions - using devenv_customer_access", action='store_true')
     parser.add_argument('--geo', help="Use Specific DB <us OR eu OR ap OR in OR gov>", nargs=1, metavar=('region'))
-    
-    
+
     args = parser.parse_args()
 
     geo_search = getattr(args, "geo")
@@ -55,7 +54,7 @@ class get:
     preset_search = getattr(args, "preset")
     user_search = getattr(args, "user")
     role_search = getattr(args, "role")
-    invite_search = getattr(args, "invite")
+    # invite_search = getattr(args, "invite")
     provider_id_search = getattr(args, "prov_id")
     provider_id = getattr(args, "aws_conf")
     gcp_id = getattr(args, "gcp_conf")
@@ -63,7 +62,6 @@ class get:
     notification_search = getattr(args, "notification")
     k8s_search = getattr(args, "k8s")
     profile_search = getattr(args, "allow_reg")
-
 
     home_folder = os.environ.get("HOME")
     orca_folder = os.environ.get("SRC_ROOT")
@@ -97,7 +95,7 @@ class ApiDB:
         except psycopg2.OperationalError as error:
             error_msg = str(error)
             if "server closed" or "Connection refused" or "timed out" in error_msg:
-                print(bcolors.FAIL + "All Tunnels are down, Resetting AllTunnels please wait..." + bcolors.ENDC)
+                print(bcolors.FAIL + "US+EU Tunnels are down, Resetting Tunnels please wait..." + bcolors.ENDC)
                 get_pid_tun_us = subprocess.Popen(
                     "lsof -i :9000 | grep 'localhost:cslistener (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
                     shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -106,19 +104,13 @@ class ApiDB:
                     "lsof -i :9001 | grep 'localhost:etlservicemgr (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
                     shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 out_eu, err = get_pid_tun_eu.communicate()
-                get_pid_tun_au = subprocess.Popen(
-                    "lsof -i :9002 | grep 'localhost:dynamid (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
-                    shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                out_au, err = get_pid_tun_au.communicate()
 
                 pid_us_str = out_us.decode()
                 pid_eu_str = out_eu.decode()
-                pid_au_str = out_au.decode()
                 pid_us = pid_us_str[:-1]
                 pid_eu = pid_eu_str[:-1]
-                pid_au = pid_au_str[:-1]
 
-                kill_tun = subprocess.Popen(f"kill {pid_us} {pid_eu} {pid_au}", shell=True, executable="/bin/zsh",
+                kill_tun = subprocess.Popen(f"kill {pid_us} {pid_eu}", shell=True, executable="/bin/zsh",
                                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 kill, err = kill_tun.communicate()
 
@@ -161,17 +153,28 @@ class ApiDB:
         except psycopg2.OperationalError as error:
             error_msg = str(error)
             if "server closed" or "Connection refused" or "timed out" in error_msg:
-                print(bcolors.FAIL + "All Tunnels are down, Resetting Tunnels please wait..." + bcolors.ENDC)
-
+                print(bcolors.FAIL + "EU+India+GOV Tunnels are down, Resetting Tunnels please wait..." + bcolors.ENDC)
                 get_pid_tun_au = subprocess.Popen(
                     "lsof -i :9002 | grep 'localhost:dynamid (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
                     shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 out_au, err = get_pid_tun_au.communicate()
+                get_pid_tun_in = subprocess.Popen(
+                    "lsof -i :9003 | grep 'localhost:9003 (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
+                    shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                out_in, err = get_pid_tun_in.communicate()
+                get_pid_tun_gov = subprocess.Popen(
+                    "lsof -i :9004 | grep 'localhost:9004 (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
+                    shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                out_gov, err = get_pid_tun_gov.communicate()
 
                 pid_au_str = out_au.decode()
+                pid_in_str = out_au.decode()
+                pid_gov_str = out_au.decode()
                 pid_au = pid_au_str[:-1]
+                pid_in = pid_in_str[:-1]
+                pid_gov = pid_gov_str[:-1]
 
-                kill_tun = subprocess.Popen(f"kill {pid_au}", shell=True, executable="/bin/zsh",
+                kill_tun = subprocess.Popen(f"kill {pid_au} {pid_in} {pid_gov}", shell=True, executable="/bin/zsh",
                                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 kill, err = kill_tun.communicate()
 
@@ -199,7 +202,7 @@ class ApiDB:
         #sys.tracebacklimit = 0
         ports = []
         if regions == "all":
-            ports = [9000, 9001, 9002, 9003]
+            ports = [9000, 9001, 9002, 9003, 9004]
         if "us" in regions:
             ports.append(9000)
         if "eu" in regions:
@@ -565,26 +568,26 @@ class options:
             display(df3)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
 
-    def invite():
-        invite_str = get.invite_search[0]
-        if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
-                print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
-                exit()
-            else:
-                df4 = ApiDB().query_all_regions(query=f"""select api_userinvite.email,api_organization.name as "organization_name",api_userinvite.organization_id,api_userinvite.issue_date,'{var.orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite join api_organization on api_organization.id = api_userinvite.organization_id WHERE lower(original_email) like '%{invite_str}%' limit 20""", regions=get.geo_search[0])
-        else:
-            df4 = ApiDB().query_all_regions(query=f"""select api_userinvite.email,api_organization.name as "organization_name",api_userinvite.organization_id,api_userinvite.issue_date,'{var.orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite join api_organization on api_organization.id = api_userinvite.organization_id WHERE lower(original_email) like '%{invite_str}%' limit 20""")
-        
-        if df4.empty:
-            print(bcolors.FAIL + "No Invite Found" + bcolors.ENDC)
-            exit()
-        else:
-            html(df4)
-            print(bcolors.OKBLUE + "We found Invite in our search" + bcolors.ENDC)
-            display(df4)
-            print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
+    # def invite():
+    #     invite_str = get.invite_search[0]
+    #     if get.geo_search != None:
+    #         if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
+    #             print(
+    #                 "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+    #             exit()
+    #         else:
+    #             df4 = ApiDB().query_all_regions(query=f"""select api_userinvite.email,api_organization.name as "organization_name",api_userinvite.organization_id,api_userinvite.issue_date,'{var.orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite join api_organization on api_organization.id = api_userinvite.organization_id WHERE lower(original_email) like '%{invite_str}%' limit 20""", regions=get.geo_search[0])
+    #     else:
+    #         df4 = ApiDB().query_all_regions(query=f"""select api_userinvite.email,api_organization.name as "organization_name",api_userinvite.organization_id,api_userinvite.issue_date,'{var.orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite join api_organization on api_organization.id = api_userinvite.organization_id WHERE lower(original_email) like '%{invite_str}%' limit 20""")
+    #     
+    #     if df4.empty:
+    #         print(bcolors.FAIL + "No Invite Found" + bcolors.ENDC)
+    #         exit()
+    #     else:
+    #         html(df4)
+    #         print(bcolors.OKBLUE + "We found Invite in our search" + bcolors.ENDC)
+    #         display(df4)
+    #         print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
 
     def aws_conf():
         provider_str = get.provider_id[0]
@@ -599,18 +602,23 @@ class options:
                 org_name = org_name_tmp.replace(' ', '_').lower()
                 df8 = ApiDB().query_all_regions(
                     query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where lower(name) like '%{org_name}%' limit 20""", regions=get.geo_search[0])
+                
         else:
             df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""")
             org_name_tmp = df7["organization_name"][0]
             org_name = org_name_tmp.replace(' ', '_').lower()
             df8 = ApiDB().query_all_regions(
                 query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where lower(name) like '%{org_name}%' limit 20""")
-
-        if not df8.empty and df8["scanneraccount_role_arn"][0] != None:
+        
+        if len(df8.index) < 2:
+            print(f"""{bcolors.FAIL}We didnt find any In-Account Service Account {provider_str}
+For normal AWS account please use de customer-access via Jacques
+More info can be found https://orcasecurity.atlassian.net/wiki/spaces/MVP/pages/2808840282/Customer+Dev+Access+AWS {bcolors.ENDC}""")
+        else:
             org_name_tmp = df7["organization_name"][0]
             org_name = org_name_tmp.replace(' ', '_')
-            aws_role_arn = df8["scanneraccount_role_arn"][0]
-            role_external_id = df8["scanneraccount_role_external_id"][0]
+            aws_role_arn = df8["scanneraccount_role_arn"][1]
+            role_external_id = df8["scanneraccount_role_external_id"][1]
             print(
                 f"""{bcolors.OKCYAN}Please note that we found In-Account Service Account:{bcolors.ENDC}
 
@@ -619,13 +627,8 @@ source_profile = production
 role_arn = {aws_role_arn}
 region = us-east-1
 external_id = {role_external_id}
-"""
-)
-        else:
-            print(f"""{bcolors.FAIL}We didnt find any In-Account Service Account {provider_str}
-For normal AWS account please use de customer-access via Jacques
-More info can be found https://orcasecurity.atlassian.net/wiki/spaces/MVP/pages/2808840282/Customer+Dev+Access+AWS {bcolors.ENDC}""")
-            
+""")
+
     def gcp_conf():
         gcp_str = get.gcp_id[0]
         
@@ -1152,8 +1155,8 @@ if __name__ == "__main__":
     if get.args.user:
         options.user()
 
-    if get.args.invite:
-        options.invite()
+    # if get.args.invite:
+    #     options.invite()
 
     if get.args.aws_conf:
         options.aws_conf()
