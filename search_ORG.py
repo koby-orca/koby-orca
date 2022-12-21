@@ -42,8 +42,9 @@ class get:
     parser.add_argument("-res_col", help="Provide the next values <provider_id asset_id jwt-token> to create a Reserve Collector", nargs=3, metavar=('provider_id','asset_id','jwt-token'))
     parser.add_argument("-res_s3", help="Provide the next values <provider_id bucket_name jwt-token> to create a S3 Bucket Reserve Collector", nargs=3, metavar=('provider_id','bucket_name','jwt-token'))
     parser.add_argument("-res_fargate", help="Provide the next values <provider_id fargate_asset_id jwt-token> to create a Fargate Cluster Reserve Collector", nargs=3, metavar=('provider_id', 'fargate_asset_id', 'jwt-token'))
-    parser.add_argument("-allow_reg", help="", nargs=1, metavar=('profile'))
-    parser.add_argument('--geo', help="Use Specific DB <us OR eu OR ap>", nargs=1, metavar=('region'))
+    # parser.add_argument("-allow_reg", help="Checking Allowed regions - using devenv_customer_access", nargs=1, metavar=('profile'))
+    parser.add_argument("-allow_reg", help="Checking Allowed regions - using devenv_customer_access", action='store_true')
+    parser.add_argument('--geo', help="Use Specific DB <us OR eu OR ap OR in OR gov>", nargs=1, metavar=('region'))
     
     
     args = parser.parse_args()
@@ -160,7 +161,7 @@ class ApiDB:
         except psycopg2.OperationalError as error:
             error_msg = str(error)
             if "server closed" or "Connection refused" or "timed out" in error_msg:
-                print(bcolors.FAIL + "AU Tunnel is down, Resetting AU Tunnel please wait..." + bcolors.ENDC)
+                print(bcolors.FAIL + "All Tunnels are down, Resetting Tunnels please wait..." + bcolors.ENDC)
 
                 get_pid_tun_au = subprocess.Popen(
                     "lsof -i :9002 | grep 'localhost:dynamid (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
@@ -198,13 +199,17 @@ class ApiDB:
         #sys.tracebacklimit = 0
         ports = []
         if regions == "all":
-            ports = [9000, 9001, 9002]
+            ports = [9000, 9001, 9002, 9003]
         if "us" in regions:
             ports.append(9000)
         if "eu" in regions:
             ports.append(9001)
         if "ap" in regions:
             ports.append(9002)
+        if "in" in regions:
+            ports.append(9003)
+        if "gov" in regions:
+            ports.append(9004)
         ret = pd.DataFrame()
         for port in ports:
             if port == 9000:
@@ -225,6 +230,18 @@ class ApiDB:
                     df["region"] = "ap"
                 else:
                     exit()
+            elif port == 9003:
+                df = self.query_api_db_ap(query, port=port)
+                if df is not None:
+                    df["region"] = "in"
+                else:
+                    exit()
+            elif port == 9004:
+                df = self.query_api_db_ap(query, port=port)
+                if df is not None:
+                    df["region"] = "gov"
+                else:
+                    exit()
             ret = pd.concat([ret, df], ignore_index=True)
         return ret
 
@@ -235,9 +252,9 @@ class options:
         orgName_str = get.orgName_search[0]
         
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             df = ApiDB().query_all_regions(query=f"""select name,id,customer_type from api_organization where lower(name) like '%{orgName_str}%' limit 20""", regions=get.geo_search[0])
         else:
@@ -263,9 +280,9 @@ class options:
             print(bcolors.FAIL + "UUID is not valid, please verify the ORG id" + bcolors.ENDC)
         else:
             if get.geo_search != None:
-                if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+                if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                     print(
-                        "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                        "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                     exit()
                 else:
                     df5 = ApiDB().query_all_regions(query=f"""select name,id,customer_type from api_organization where (id) = '{orgID_str}' limit 20""", regions=get.geo_search[0])
@@ -288,9 +305,9 @@ class options:
         k8s_str = get.k8s_search[0]
 
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df10 = ApiDB().query_all_regions(query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{k8s_str}' limit 20""", regions=get.geo_search[0])
@@ -329,9 +346,9 @@ class options:
         cluster_name = getattr(args, "k8s_conn")[1]
 
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df10 = ApiDB().query_all_regions(query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{provider_id_k8s}' limit 20""", regions=get.geo_search[0])
@@ -417,9 +434,9 @@ class options:
         cloudaccount_str = get.provider_id_search[0]
 
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df6 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info,api_cloudaccount.management_account_id,api_cloudaccount.allowed_regions from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{cloudaccount_str}' limit 20""", regions=get.geo_search[0])
@@ -439,9 +456,9 @@ class options:
         preset_str = get.preset_search[0]
 
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gob" + bcolors.ENDC)
                 exit()
             else:
                 df2 = ApiDB().query_all_regions(query=f"""select name,settings from api_accountscansettingspreset where lower(name) like '%{preset_str}%' limit 20""", region=get.geo_search[0])
@@ -461,9 +478,9 @@ class options:
         cloudaccount_id_str = get.cloudaccount_id_search[0]
 
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df10 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name",api_cloudaccount.name,api_cloudaccount.id,api_cloudaccount.cloud_provider_id,api_cloudaccount.created_time from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (api_cloudaccount.id) = '{cloudaccount_id_str}' limit 20""", regions=get.geo_search[0])
@@ -486,9 +503,9 @@ class options:
             print(bcolors.FAIL + "UUID is not valid, please verify the ORG id" + bcolors.ENDC)
         
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df10 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 20""", regions=get.geo_search[0])
@@ -507,9 +524,9 @@ class options:
     def role():
         role_str = get.role_search[0]
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             df = ApiDB().query_all_regions(query=f"""SELECT rbac_rbacrole.organization_id, rbac_rbacrole.name,rbac_rbacrole.permission_groups,rbac_rbacrole.is_custom FROM rbac_rbacrole WHERE id IN ( SELECT rbac_rbacuseraccess.role_id FROM rbac_rbacuseraccess WHERE apiuser_id IN ( SELECT id FROM api_apiuser WHERE  api_apiuser.original_email like '%{role_str}%')) LIMIT 20""", regions=get.geo_search[0])
         else:
@@ -530,9 +547,9 @@ class options:
     def user():
         user_str = get.user_search[0]
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df3 = ApiDB().query_all_regions(query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 20""", regions=get.geo_search[0])
@@ -551,9 +568,9 @@ class options:
     def invite():
         invite_str = get.invite_search[0]
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df4 = ApiDB().query_all_regions(query=f"""select api_userinvite.email,api_organization.name as "organization_name",api_userinvite.organization_id,api_userinvite.issue_date,'{var.orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite join api_organization on api_organization.id = api_userinvite.organization_id WHERE lower(original_email) like '%{invite_str}%' limit 20""", regions=get.geo_search[0])
@@ -572,70 +589,22 @@ class options:
     def aws_conf():
         provider_str = get.provider_id[0]
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""", regions=get.geo_search[0])
+                org_name_tmp = df7["organization_name"][0]
+                org_name = org_name_tmp.replace(' ', '_').lower()
+                df8 = ApiDB().query_all_regions(
+                    query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where lower(name) like '%{org_name}%' limit 20""", regions=get.geo_search[0])
         else:
             df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""")
-
-        org_name_tmp = df7["organization_name"][0]
-        org_name = org_name_tmp.replace(' ', '_').lower()
-        df8 = ApiDB().query_all_regions(
-            query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where lower(name) like '%{org_name}%' limit 20""")
-
-
-        if df7.empty:
-            print(bcolors.FAIL + "No provider ID Found" + bcolors.ENDC)
-            exit()
-        # rare scenrio in case the same account exist in more then 1 region (we should not have it)
-        elif len(df7.index) > 1:
-            double = df7["organization_name"][1]
-
-            if double != "":
-                aws_role_arn_1 = df7["aws_role_arn"][0]
-                role_external_id_1 = df7["role_external_id"][0]
-                org_name_1_tmp = df7["organization_name"][0]
-                org_name_1 = org_name_1_tmp.replace(' ', '_')
-                aws_role_arn_2 = df7["aws_role_arn"][1]
-                role_external_id_2 = df7["role_external_id"][1]
-                org_name_2_tmp = df7["organization_name"][1]
-                org_name_2 = org_name_2_tmp.replace(' ', '_')
-
-                print(
-                    f"""{bcolors.OKCYAN}Please Copy the next output to the aws config file in:{bcolors.ENDC} {var.aws_file}
-
-[profile {org_name_1}_{provider_str}]
-source_profile = production
-role_arn = {aws_role_arn_1}
-region = us-east-1
-external_id = {role_external_id_1}
-
-[profile {org_name_2}_{provider_str}]
-source_profile = production
-role_arn = {aws_role_arn_2}
-region = us-east-1
-external_id = {role_external_id_2}
-"""
-)
-
-        else:
-            aws_role_arn = df7["aws_role_arn"][0]
-            role_external_id = df7["role_external_id"][0]
             org_name_tmp = df7["organization_name"][0]
-            org_name = org_name_tmp.replace(' ', '_')
-            print(
-                f"""{bcolors.OKCYAN}Please Copy the next output to the aws config file in:{bcolors.ENDC} {var.aws_file}
-
-[profile {org_name}_{provider_str}]
-source_profile = production
-role_arn = {aws_role_arn}
-region = us-east-1
-external_id = {role_external_id}
-"""
-)
+            org_name = org_name_tmp.replace(' ', '_').lower()
+            df8 = ApiDB().query_all_regions(
+                query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where lower(name) like '%{org_name}%' limit 20""")
 
         if not df8.empty and df8["scanneraccount_role_arn"][0] != None:
             org_name_tmp = df7["organization_name"][0]
@@ -652,14 +621,18 @@ region = us-east-1
 external_id = {role_external_id}
 """
 )
+        else:
+            print(f"""{bcolors.FAIL}We didnt find any In-Account Service Account {provider_str}
+For normal AWS account please use de customer-access via Jacques
+More info can be found https://orcasecurity.atlassian.net/wiki/spaces/MVP/pages/2808840282/Customer+Dev+Access+AWS {bcolors.ENDC}""")
             
     def gcp_conf():
         gcp_str = get.gcp_id[0]
         
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df8 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 20""", regions=get.geo_search[0])
@@ -709,9 +682,9 @@ gcloud config set project {aname}
         jwt_token_search = getattr(args, "res_col")[2]
         
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions=get.geo_search[0])
@@ -748,9 +721,9 @@ gcloud config set project {aname}
         jwt_token_search = getattr(args, "res_s3")[2]
 
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions=get.geo_search[0])
@@ -786,9 +759,9 @@ gcloud config set project {aname}
         jwt_token_search = getattr(args, "res_fargate")[2]
 
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap':
+            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions=get.geo_search[0])
@@ -815,14 +788,15 @@ gcloud config set project {aname}
             exit()
 
     def allow_reg():
-        profile_str = get.profile_search[0]
+        # profile_str = get.profile_search[0]
+        profile_str = "devenv_customer_access"
 
-        bashCommand = f"cat /Users/kobykagan/.aws/config | grep -w 'profile {profile_str}'"
+        bashCommand = f"cat /Users/kobykagan/.aws/config | grep -w '{profile_str}'"
         process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
         result, error = process.communicate()
 
         if len(result) == 0:
-            print(f"No Profile with the name {profile_str}")
+            print(f"The profile {profile_str} was not configured under ~/.aws/config ")
             exit()
         else:
             pass
@@ -830,8 +804,10 @@ gcloud config set project {aname}
         regions = ['us-east-2', 'us-east-1', 'us-west-2', 'us-west-1', 'sa-east-1', 'eu-west-3', 'eu-west-2', 'eu-west-1', 'eu-north-1', 'eu-central-1', 'ca-central-1', 'ap-southeast-2', 'ap-southeast-1', 'ap-south-1', 'ap-northeast-3', 'ap-northeast-2', 'ap-northeast-1', 'sa-east-1']
         a_reg = []
 
+        
         for reg in regions:
-            ec2 = boto3.session.Session(profile_name=profile_str, region_name=reg).client(service_name='ec2')
+            ec2 = boto3.session.Session(aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+                                   aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),aws_session_token=os.environ.get('AWS_SESSION_TOKEN'), region_name=reg).client(service_name='ec2')
             try:
                 ec2.describe_regions()
                 a_reg.append(reg)
@@ -965,7 +941,7 @@ def tunnel():
             search_val = "localhost:9002".encode()
             for line in ap_tunnel.stdout:
                 if search_val in line:
-                    print(bcolors.OKBLUE + "Established tunnel to production environment AU" + bcolors.ENDC + "\n")
+                    print(bcolors.OKBLUE + "Established tunnel to production environment AU" + bcolors.ENDC)
                     time.sleep(1)
                     break
     else:
@@ -973,10 +949,75 @@ def tunnel():
         search_val = "localhost:9002".encode()
         for line in ap_tunnel.stdout:
             if search_val in line:
-                print(bcolors.OKBLUE + "Established tunnel to production environment AU" + bcolors.ENDC + "\n")
+                print(bcolors.OKBLUE + "Established tunnel to production environment AU" + bcolors.ENDC )
                 time.sleep(1)
                 break
 
+    need_tunnel_9003 = subprocess.Popen("lsof -i :9003", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    need_tunnel_out, err = need_tunnel_9003.communicate()
+    need = "localhost:9003 (LISTEN)".encode()
+    if need in need_tunnel_out:
+        get_pid_tun_4 = subprocess.Popen(
+            "lsof -i :9003 | grep 'localhost:9003 (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out_4, err = get_pid_tun_4.communicate()
+        pid_4_str = out_4.decode()
+        pid_4 = pid_4_str[:-1]
+        time_tun_4 = subprocess.Popen(f"ps -o etime {pid_4} | grep -v 'ELAPSED'", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out_time_4, err = time_tun_4.communicate()
+        out_time_4_str = out_time_4.decode()
+        time_pid_4 = out_time_4_str[:-1]
+
+        if time_pid_4 > max_time or len(time_pid_4) >= max_len:
+            kill_pid_4 = subprocess.Popen(f"kill -9 {pid_4}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            out_pid_4, err = kill_pid_4.communicate()
+            in_tunnel = subprocess.Popen("aws_rds_tunnel production 9003 --region ap-south-1", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+            search_val = "localhost:9003".encode()
+            for line in in_tunnel.stdout:
+                if search_val in line:
+                    print(bcolors.OKBLUE + "Established tunnel to production environment India" + bcolors.ENDC)
+                    time.sleep(1)
+                    break
+    else:
+        in_tunnel = subprocess.Popen("aws_rds_tunnel production 9003 --region ap-south-1", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+        search_val = "localhost:9003".encode()
+        for line in in_tunnel.stdout:
+            if search_val in line:
+                print(bcolors.OKBLUE + "Established tunnel to production environment India" + bcolors.ENDC)
+                time.sleep(1)
+                break
+
+    need_tunnel_9004 = subprocess.Popen("lsof -i :9004", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    need_tunnel_out, err = need_tunnel_9004.communicate()
+    need = "localhost:9004 (LISTEN)".encode()
+    if need in need_tunnel_out:
+        get_pid_tun_5 = subprocess.Popen(
+            "lsof -i :9004 | grep 'localhost:9004 (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out_5, err = get_pid_tun_5.communicate()
+        pid_5_str = out_5.decode()
+        pid_5 = pid_5_str[:-1]
+        time_tun_5 = subprocess.Popen(f"ps -o etime {pid_5} | grep -v 'ELAPSED'", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out_time_5, err = time_tun_5.communicate()
+        out_time_5_str = out_time_5.decode()
+        time_pid_5 = out_time_5_str[:-1]
+
+        if time_pid_5 > max_time or len(time_pid_5) >= max_len:
+            kill_pid_5 = subprocess.Popen(f"kill -9 {pid_5}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            out_pid_5, err = kill_pid_5.communicate()
+            gov_tunnel = subprocess.Popen("aws_rds_tunnel production-gov 9004 --region us-gov-west-1", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+            search_val = "localhost:9004".encode()
+            for line in gov_tunnel.stdout:
+                if search_val in line:
+                    print(bcolors.OKBLUE + "Established tunnel to production environment GOV" + bcolors.ENDC + "\n")
+                    time.sleep(1)
+                    break
+    else:
+        gov_tunnel = subprocess.Popen("aws_rds_tunnel production-gov 9004 --region us-gov-west-1", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+        search_val = "localhost:9004".encode()
+        for line in gov_tunnel.stdout:
+            if search_val in line:
+                print(bcolors.OKBLUE + "Established tunnel to production environment GOV" + bcolors.ENDC + "\n")
+                time.sleep(1)
+                break
     confirm_tunel()
 
 def confirm_tunel():
@@ -1009,6 +1050,26 @@ def confirm_tunel():
         need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
         need_tunnel_out, err = need_tunnel_9002.communicate()
+        time.sleep(1)
+        
+    need_tunnel_9003 = subprocess.Popen("lsof -i :9003", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
+                                        stderr=subprocess.STDOUT)
+    need_tunnel_out, err = need_tunnel_9003.communicate()
+    need = "localhost:9003 (LISTEN)".encode()
+    while need not in need_tunnel_out:
+        need_tunnel_9003 = subprocess.Popen("lsof -i :9003", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
+                                            stderr=subprocess.STDOUT)
+        need_tunnel_out, err = need_tunnel_9003.communicate()
+        time.sleep(1)
+        
+    need_tunnel_9004 = subprocess.Popen("lsof -i :9004", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
+                                        stderr=subprocess.STDOUT)
+    need_tunnel_out, err = need_tunnel_9004.communicate()
+    need = "localhost:9004 (LISTEN)".encode()
+    while need not in need_tunnel_out:
+        need_tunnel_9004 = subprocess.Popen("lsof -i :9004", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
+                                            stderr=subprocess.STDOUT)
+        need_tunnel_out, err = need_tunnel_9004.communicate()
         time.sleep(1)
 
 def garbage():
