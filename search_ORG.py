@@ -45,10 +45,12 @@ class get:
     # parser.add_argument("-allow_reg", help="Checking Allowed regions - using devenv_customer_access", nargs=1, metavar=('profile'))
     parser.add_argument("-allow_reg", help="Checking Allowed regions - using devenv_customer_access", action='store_true')
     parser.add_argument('--geo', help="Use Specific DB <us OR eu OR ap OR in OR gov>", nargs=1, metavar=('region'))
+    parser.add_argument('--org', help="Use Specific Organization Name", nargs=1, metavar=('name'))
 
     args = parser.parse_args()
 
     geo_search = getattr(args, "geo")
+    name_aws_conf = getattr(args, "org")
     orgName_search = getattr(args, "org_name")
     orgID_search = getattr(args, "org_id")
     preset_search = getattr(args, "preset")
@@ -598,30 +600,149 @@ class options:
                 exit()
             else:
                 df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""", regions=get.geo_search[0])
+                if df7.empty:
+                    if get.name_aws_conf == None:
+                        print(bcolors.FAIL + f"Could not found the Org Name for Account {provider_str}" + bcolors.ENDC)
+                        print(bcolors.OKGREEN + f"You can try running the command without --geo {get.geo_search[0]} flag" + bcolors.ENDC)
+                        exit()
+                    else:
+                        org_name = get.name_aws_conf[0]
+                        df8 = ApiDB().query_all_regions(
+                            query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where lower(name) like '%{org_name}%' limit 20""",
+                            regions=get.geo_search[0])
+                else:
+                    org_name_tmp = df7["organization_name"][0]
+                    org_name = org_name_tmp.replace(' ', '_').lower()
+                    df8 = ApiDB().query_all_regions(
+                        query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where lower(name) like '%{org_name}%' limit 20""", regions=get.geo_search[0])
+        
+            result = df8["scanneraccount_role_arn"].to_string()[5:]
+            if len(df8.index) < 2 and result == 'None':
+                print(f"""{bcolors.FAIL}We didnt find any In-Account Service Account {provider_str}
+            For normal AWS account please use de customer-access via Jacques
+            More info can be found https://orcasecurity.atlassian.net/wiki/spaces/MVP/pages/2808840282/Customer+Dev+Access+AWS {bcolors.ENDC}""")
+
+            elif len(df8.index) <= 1 and result != 'None':
+                if get.name_aws_conf == None:
+                    org_name_tmp = df7["organization_name"][0]
+                    org_name = org_name_tmp.replace(' ', '_')
+                else:
+                    org_name = get.name_aws_conf[0]
+                aws_role_arn = df8["scanneraccount_role_arn"][0]
+                role_external_id = df8["scanneraccount_role_external_id"][0]
+                print(f"""{bcolors.OKCYAN}Please note that we found In-Account Service Account:{bcolors.ENDC}
+
+[profile {org_name}_InAccount_{provider_str}]
+source_profile = production
+role_arn = {aws_role_arn}
+region = us-east-1
+external_id = {role_external_id}
+""")
+
+            elif len(df8.index) <= 2 and result != 'None':
+                if get.name_aws_conf == None:
+                    org_name_tmp = df7["organization_name"][0]
+                    org_name = org_name_tmp.replace(' ', '_')
+                else:
+                    org_name = get.name_aws_conf[0]
+                aws_role_arn = df8["scanneraccount_role_arn"][1]
+                role_external_id = df8["scanneraccount_role_external_id"][1]
+                print(f"""{bcolors.OKCYAN}Please note that we found In-Account Service Account:{bcolors.ENDC}
+
+        [profile {org_name}_InAccount_{provider_str}]
+        source_profile = production
+        role_arn = {aws_role_arn}
+        region = us-east-1
+        external_id = {role_external_id}
+        """)
+
+            else:
+                if get.name_aws_conf == None:
+                    org_name_tmp = df7["organization_name"][0]
+                    org_name = org_name_tmp.replace(' ', '_')
+                else:
+                    org_name = get.name_aws_conf[0]
+                aws_role_arn = df8["scanneraccount_role_arn"][2]
+                role_external_id = df8["scanneraccount_role_external_id"][2]
+                print(
+                    f"""{bcolors.OKCYAN}Please note that we found In-Account Service Account:{bcolors.ENDC}
+
+[profile {org_name}_InAccount_{provider_str}]
+source_profile = production
+role_arn = {aws_role_arn}
+region = us-east-1
+external_id = {role_external_id}
+""")
+        else:
+            df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""")
+            if df7.empty:
+                if get.name_aws_conf == None:
+                    print(bcolors.FAIL + f"Could not found the Org Name for Account {provider_str}" + bcolors.ENDC)
+                    print(
+                        bcolors.OKGREEN + f"You can try running the command with --org <organization name> flag" + bcolors.ENDC)
+                    exit()
+                else:
+                    org_name = get.name_aws_conf[0]
+                    df8 = ApiDB().query_all_regions(
+                        query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where lower(name) like '%{org_name}%' limit 20""")
+                    
+            else:
                 org_name_tmp = df7["organization_name"][0]
                 org_name = org_name_tmp.replace(' ', '_').lower()
                 df8 = ApiDB().query_all_regions(
-                    query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where lower(name) like '%{org_name}%' limit 20""", regions=get.geo_search[0])
-                
-        else:
-            df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""")
-            org_name_tmp = df7["organization_name"][0]
-            org_name = org_name_tmp.replace(' ', '_').lower()
-            df8 = ApiDB().query_all_regions(
-                query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where lower(name) like '%{org_name}%' limit 20""")
-        
-        if len(df8.index) < 2:
-            print(f"""{bcolors.FAIL}We didnt find any In-Account Service Account {provider_str}
+                    query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where lower(name) like '%{org_name}%' limit 20""")
+
+            result = df8["scanneraccount_role_arn"].to_string()[5:]
+            if len(df8.index) <= 1 and result == 'None':
+                print(f"""{bcolors.FAIL}We didnt find any In-Account Service Account {provider_str}
 For normal AWS account please use de customer-access via Jacques
 More info can be found https://orcasecurity.atlassian.net/wiki/spaces/MVP/pages/2808840282/Customer+Dev+Access+AWS {bcolors.ENDC}""")
-        else:
-            org_name_tmp = df7["organization_name"][0]
-            org_name = org_name_tmp.replace(' ', '_')
-            aws_role_arn = df8["scanneraccount_role_arn"][1]
-            role_external_id = df8["scanneraccount_role_external_id"][1]
-            print(
-                f"""{bcolors.OKCYAN}Please note that we found In-Account Service Account:{bcolors.ENDC}
+            elif len(df8.index) <= 1 and result != 'None':
+                if get.name_aws_conf == None:
+                    org_name_tmp = df7["organization_name"][0]
+                    org_name = org_name_tmp.replace(' ', '_')
+                else:
+                    org_name = get.name_aws_conf[0]
+                aws_role_arn = df8["scanneraccount_role_arn"][0]
+                role_external_id = df8["scanneraccount_role_external_id"][0]
+                print(
+                    f"""{bcolors.OKCYAN}Please note that we found In-Account Service Account:{bcolors.ENDC}
+    
+[profile {org_name}_InAccount_{provider_str}]
+source_profile = production
+role_arn = {aws_role_arn}
+region = us-east-1
+external_id = {role_external_id}
+""")
+            elif len(df8.index) <= 2 and result != 'None':
+                if get.name_aws_conf == None:
+                    org_name_tmp = df7["organization_name"][0]
+                    org_name = org_name_tmp.replace(' ', '_')
+                else:
+                    org_name = get.name_aws_conf[0]
+                aws_role_arn = df8["scanneraccount_role_arn"][1]
+                role_external_id = df8["scanneraccount_role_external_id"][1]
+                print(
+                    f"""{bcolors.OKCYAN}Please note that we found In-Account Service Account:{bcolors.ENDC}
 
+[profile {org_name}_InAccount_{provider_str}]
+source_profile = production
+role_arn = {aws_role_arn}
+region = us-east-1
+external_id = {role_external_id}
+""")
+
+            else:
+                if get.name_aws_conf == None:
+                    org_name_tmp = df7["organization_name"][0]
+                    org_name = org_name_tmp.replace(' ', '_')
+                else:
+                    org_name = get.name_aws_conf[0]
+                aws_role_arn = df8["scanneraccount_role_arn"][2]
+                role_external_id = df8["scanneraccount_role_external_id"][2]
+                print(
+                    f"""{bcolors.OKCYAN}Please note that we found In-Account Service Account:{bcolors.ENDC}
+    
 [profile {org_name}_InAccount_{provider_str}]
 source_profile = production
 role_arn = {aws_role_arn}
