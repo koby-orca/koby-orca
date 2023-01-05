@@ -44,12 +44,12 @@ class get:
     parser.add_argument("-res_fargate", help="Provide the next values <provider_id fargate_asset_id jwt-token> to create a Fargate Cluster Reserve Collector", nargs=3, metavar=('provider_id', 'fargate_asset_id', 'jwt-token'))
     # parser.add_argument("-allow_reg", help="Checking Allowed regions - using devenv_customer_access", nargs=1, metavar=('profile'))
     parser.add_argument("-allow_reg", help="Checking Allowed regions - using devenv_customer_access", action='store_true')
-    parser.add_argument('--geo', help="Use Specific DB <us OR eu OR ap OR in OR gov>", nargs=1, metavar=('region'))
-    parser.add_argument('--org', help="Use Specific Organization Name", nargs=1, metavar=('name'))
+    parser.add_argument('--region', help="Use Specific DB <us OR eu OR ap OR in OR gov>", nargs=1, metavar=('region'))
+    parser.add_argument('--org', help="Use Specific Organization Name, can only be used with -aws_conf flag", nargs=1, metavar=('name'))
 
     args = parser.parse_args()
 
-    geo_search = getattr(args, "geo")
+    geo_search = getattr(args, "region")
     name_aws_conf = getattr(args, "org")
     orgName_search = getattr(args, "org_name")
     orgID_search = getattr(args, "org_id")
@@ -259,7 +259,7 @@ class options:
         if get.geo_search != None:
             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             df = ApiDB().query_all_regions(query=f"""select name,id,customer_type from api_organization where lower(name) like '%{orgName_str}%' limit 20""", regions=get.geo_search[0])
         else:
@@ -287,7 +287,7 @@ class options:
             if get.geo_search != None:
                 if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                     print(
-                        "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                        "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                     exit()
                 else:
                     df5 = ApiDB().query_all_regions(query=f"""select name,id,customer_type from api_organization where (id) = '{orgID_str}' limit 20""", regions=get.geo_search[0])
@@ -312,7 +312,7 @@ class options:
         if get.geo_search != None:
             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df10 = ApiDB().query_all_regions(query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{k8s_str}' limit 20""", regions=get.geo_search[0])
@@ -344,7 +344,7 @@ class options:
     def k8s_conn():
         parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
         parser.add_argument("-k8s_conn", help="Test k8s connectivity, getting a command to run using <provider_id cluster_name>", nargs=2, metavar=('provider_id', 'cluster_name'))
-        parser.add_argument('--geo', nargs=argparse.REMAINDER)
+        parser.add_argument('--region', nargs=argparse.REMAINDER)
         args = parser.parse_args()
 
         provider_id_k8s = getattr(args, "k8s_conn")[0]
@@ -353,7 +353,7 @@ class options:
         if get.geo_search != None:
             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df10 = ApiDB().query_all_regions(query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{provider_id_k8s}' limit 20""", regions=get.geo_search[0])
@@ -441,7 +441,7 @@ class options:
         if get.geo_search != None:
             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df6 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info,api_cloudaccount.management_account_id,api_cloudaccount.allowed_regions from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{cloudaccount_str}' limit 20""", regions=get.geo_search[0])
@@ -463,7 +463,7 @@ class options:
         if get.geo_search != None:
             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gob" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gob" + bcolors.ENDC)
                 exit()
             else:
                 df2 = ApiDB().query_all_regions(query=f"""select name,settings from api_accountscansettingspreset where lower(name) like '%{preset_str}%' limit 20""", region=get.geo_search[0])
@@ -485,7 +485,7 @@ class options:
         if get.geo_search != None:
             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df10 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name",api_cloudaccount.name,api_cloudaccount.id,api_cloudaccount.cloud_provider_id,api_cloudaccount.created_time from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (api_cloudaccount.id) = '{cloudaccount_id_str}' limit 20""", regions=get.geo_search[0])
@@ -510,7 +510,7 @@ class options:
         if get.geo_search != None:
             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df10 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 20""", regions=get.geo_search[0])
@@ -531,7 +531,7 @@ class options:
         if get.geo_search != None:
             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             df = ApiDB().query_all_regions(query=f"""SELECT rbac_rbacrole.organization_id, rbac_rbacrole.name,rbac_rbacrole.permission_groups,rbac_rbacrole.is_custom FROM rbac_rbacrole WHERE id IN ( SELECT rbac_rbacuseraccess.role_id FROM rbac_rbacuseraccess WHERE apiuser_id IN ( SELECT id FROM api_apiuser WHERE  api_apiuser.original_email like '%{role_str}%')) LIMIT 20""", regions=get.geo_search[0])
         else:
@@ -554,7 +554,7 @@ class options:
         if get.geo_search != None:
             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df3 = ApiDB().query_all_regions(query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 20""", regions=get.geo_search[0])
@@ -575,7 +575,7 @@ class options:
     #     if get.geo_search != None:
     #         if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
     #             print(
-    #                 "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+    #                 "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
     #             exit()
     #         else:
     #             df4 = ApiDB().query_all_regions(query=f"""select api_userinvite.email,api_organization.name as "organization_name",api_userinvite.organization_id,api_userinvite.issue_date,'{var.orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite join api_organization on api_organization.id = api_userinvite.organization_id WHERE lower(original_email) like '%{invite_str}%' limit 20""", regions=get.geo_search[0])
@@ -596,14 +596,14 @@ class options:
         if get.geo_search != None:
             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df7 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 20""", regions=get.geo_search[0])
                 if df7.empty:
                     if get.name_aws_conf == None:
                         print(bcolors.FAIL + f"Could not found the Org Name for Account {provider_str}" + bcolors.ENDC)
-                        print(bcolors.OKGREEN + f"You can try running the command without --geo {get.geo_search[0]} flag" + bcolors.ENDC)
+                        print(bcolors.OKGREEN + f"You can try running the command without --region {get.geo_search[0]} flag" + bcolors.ENDC)
                         exit()
                     else:
                         org_name = get.name_aws_conf[0]
@@ -630,7 +630,7 @@ class options:
                     org_name = get.name_aws_conf[0]
                 aws_role_arn = df8["scanneraccount_role_arn"][0]
                 role_external_id = df8["scanneraccount_role_external_id"][0]
-                print(f"""{bcolors.OKCYAN}Please note that we found In-Account Service Account:{bcolors.ENDC}
+                print(f"""{bcolors.OKCYAN}We found In-Account Service Account:{bcolors.ENDC}
 
 [profile {org_name}_InAccount_{provider_str}]
 source_profile = production
@@ -647,7 +647,7 @@ external_id = {role_external_id}
                     org_name = get.name_aws_conf[0]
                 aws_role_arn = df8["scanneraccount_role_arn"][1]
                 role_external_id = df8["scanneraccount_role_external_id"][1]
-                print(f"""{bcolors.OKCYAN}Please note that we found In-Account Service Account:{bcolors.ENDC}
+                print(f"""{bcolors.OKCYAN}We found In-Account Service Account:{bcolors.ENDC}
 
         [profile {org_name}_InAccount_{provider_str}]
         source_profile = production
@@ -665,7 +665,7 @@ external_id = {role_external_id}
                 aws_role_arn = df8["scanneraccount_role_arn"][2]
                 role_external_id = df8["scanneraccount_role_external_id"][2]
                 print(
-                    f"""{bcolors.OKCYAN}Please note that we found In-Account Service Account:{bcolors.ENDC}
+                    f"""{bcolors.OKCYAN}We found In-Account Service Account:{bcolors.ENDC}
 
 [profile {org_name}_InAccount_{provider_str}]
 source_profile = production
@@ -706,7 +706,7 @@ More info can be found https://orcasecurity.atlassian.net/wiki/spaces/MVP/pages/
                 aws_role_arn = df8["scanneraccount_role_arn"][0]
                 role_external_id = df8["scanneraccount_role_external_id"][0]
                 print(
-                    f"""{bcolors.OKCYAN}Please note that we found In-Account Service Account:{bcolors.ENDC}
+                    f"""{bcolors.OKCYAN}We found In-Account Service Account:{bcolors.ENDC}
     
 [profile {org_name}_InAccount_{provider_str}]
 source_profile = production
@@ -723,7 +723,7 @@ external_id = {role_external_id}
                 aws_role_arn = df8["scanneraccount_role_arn"][1]
                 role_external_id = df8["scanneraccount_role_external_id"][1]
                 print(
-                    f"""{bcolors.OKCYAN}Please note that we found In-Account Service Account:{bcolors.ENDC}
+                    f"""{bcolors.OKCYAN}We found In-Account Service Account:{bcolors.ENDC}
 
 [profile {org_name}_InAccount_{provider_str}]
 source_profile = production
@@ -741,7 +741,7 @@ external_id = {role_external_id}
                 aws_role_arn = df8["scanneraccount_role_arn"][2]
                 role_external_id = df8["scanneraccount_role_external_id"][2]
                 print(
-                    f"""{bcolors.OKCYAN}Please note that we found In-Account Service Account:{bcolors.ENDC}
+                    f"""{bcolors.OKCYAN}We found In-Account Service Account:{bcolors.ENDC}
     
 [profile {org_name}_InAccount_{provider_str}]
 source_profile = production
@@ -756,7 +756,7 @@ external_id = {role_external_id}
         if get.geo_search != None:
             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df8 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 20""", regions=get.geo_search[0])
@@ -798,7 +798,7 @@ gcloud config set project {aname}
     def res_col():
         parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
         parser.add_argument("-res_col",help="Provide the next values <provider_id asset_id jwt-token> to create a Reserve Collector",nargs=3, metavar=('provider_id', 'asset_id', 'jwt-token'))
-        parser.add_argument('--geo', nargs=argparse.REMAINDER)
+        parser.add_argument('--region', nargs=argparse.REMAINDER)
         args = parser.parse_args()
         
         provider_id_search = getattr(args, "res_col")[0]
@@ -808,7 +808,7 @@ gcloud config set project {aname}
         if get.geo_search != None:
             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions=get.geo_search[0])
@@ -837,7 +837,7 @@ gcloud config set project {aname}
     def res_s3():
         parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
         parser.add_argument("-res_s3", help="Provide the next values <provider_id bucket_name jwt-token> to create a S3 Bucket Reserve Collector", nargs=3, metavar=('provider_id', 'bucket_name', 'jwt-token'))
-        parser.add_argument('--geo', nargs=argparse.REMAINDER)
+        parser.add_argument('--region', nargs=argparse.REMAINDER)
         args = parser.parse_args()
         
         provider_id_search = getattr(args, "res_s3")[0]
@@ -847,7 +847,7 @@ gcloud config set project {aname}
         if get.geo_search != None:
             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions=get.geo_search[0])
@@ -876,7 +876,7 @@ gcloud config set project {aname}
     def res_fargate():
         parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
         parser.add_argument("-res_fargate", help="Provide the next values <provider_id fargate_asset_id jwt-token> to create a Fargate Cluster Reserve Collector", nargs=3, metavar=('provider_id', 'fargate_asset_id', 'jwt-token'))
-        parser.add_argument('--geo', nargs=argparse.REMAINDER)
+        parser.add_argument('--region', nargs=argparse.REMAINDER)
         args = parser.parse_args()
         provider_id_search = getattr(args, "res_fargate")[0]
         fargate_asset_id_search = getattr(args, "res_fargate")[1]
@@ -885,7 +885,7 @@ gcloud config set project {aname}
         if get.geo_search != None:
             if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
                 print(
-                    "The argument " + bcolors.FAIL + '--geo' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 df9 = ApiDB().query_all_regions(query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 20""", regions=get.geo_search[0])
