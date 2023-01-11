@@ -44,6 +44,7 @@ class get:
     parser.add_argument("-res_fargate", help="Provide the next values <provider_id fargate_asset_id jwt-token> to create a Fargate Cluster Reserve Collector", nargs=3, metavar=('provider_id', 'fargate_asset_id', 'jwt-token'))
     # parser.add_argument("-allow_reg", help="Checking Allowed regions - using devenv_customer_access", nargs=1, metavar=('profile'))
     parser.add_argument("-allow_reg", help="Checking Allowed regions - using devenv_customer_access", action='store_true')
+    parser.add_argument("-get_permission", help="Checking Allowed regions - using devenv_customer_access", action='store_true')
     parser.add_argument('--region', help="Use Specific DB <us OR eu OR ap OR in OR gov>", nargs=1, metavar=('region'))
     parser.add_argument('--org', help="Use Specific Organization Name, can only be used with -aws_conf flag", nargs=1, metavar=('name'))
 
@@ -915,7 +916,7 @@ gcloud config set project {aname}
         # profile_str = get.profile_search[0]
         profile_str = "devenv_customer_access"
 
-        bashCommand = f"cat /Users/kobykagan/.aws/config | grep -w '{profile_str}'"
+        bashCommand = f"cat ~/.aws/config | grep -w '{profile_str}'"
         process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
         result, error = process.communicate()
 
@@ -942,6 +943,26 @@ gcloud config set project {aname}
             print("All Regions allowed")
         else:
             print(f"Allowed Regions: {a_reg}")
+
+    def get_permission():
+        profile_str = "devenv_customer_access"
+
+        bashCommand = f"cat /Users/kobykagan/.aws/config | grep -w '{profile_str}'"
+        process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+        result, error = process.communicate()
+
+        if len(result) == 0:
+            print(f"The profile {profile_str} was not configured under ~/.aws/config ")
+            exit()
+        else:
+            pass
+
+        iam = boto3.session.Session(aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'), aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'), aws_session_token=os.environ.get('AWS_SESSION_TOKEN')).client(
+            service_name='iam')
+
+        respond = iam.list_attached_role_policies(RoleName='OrcaSecurityRole')
+        test = respond.get('AttachedPolicies')
+        print(test('PolicyArn'))
 
 def config_bastion():
     bastion = subprocess.Popen("ls -l ~/.ssh | grep config_bastion", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -1242,7 +1263,10 @@ if __name__ == "__main__":
     #sys.tracebacklimit = 0
 
     garbage()
-    
+
+    if get.args.get_permission:
+        options.get_permission()
+
     if get.args.allow_reg:
         options.allow_reg()
         
