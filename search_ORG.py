@@ -85,6 +85,9 @@ class ApiDB:
         vals = get_val(get.home_folder + "/.secret/secrets.json")
         user = vals['user']
         password = vals['password']
+        port = "9000"
+        env = "US"
+        localhost = "localhost:cslistener (LISTEN)"
 
         database = "postgres"
         user = user
@@ -112,7 +115,7 @@ class ApiDB:
                                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 kill, err = kill_tun.communicate()
 
-                tunnel()
+                tunnel_specific(port,env,localhost)
                 try:
                     conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
                                             connect_timeout=10)
@@ -137,6 +140,9 @@ class ApiDB:
         vals = get_val(get.home_folder + "/.secret/secrets.json")
         user = vals['user']
         password = vals['password']
+        port = "9001"
+        env = "EU"
+        localhost = "localhost:etlservicemgr (LISTEN)"
 
         database = "postgres"
         user = user
@@ -151,9 +157,9 @@ class ApiDB:
         except psycopg2.OperationalError as error:
             error_msg = str(error)
             if "server closed" or "Connection refused" or "timed out" in error_msg:
-                print(bcolors.FAIL + "EU Tunnel is down, Resetting Tunnel please wait..." + bcolors.ENDC)
+                print(bcolors.FAIL + f"{env} Tunnel is down, Resetting Tunnel please wait..." + bcolors.ENDC)
                 get_pid_tun_us = subprocess.Popen(
-                    "lsof -i :9001 | grep 'localhost:etlservicemgr (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
+                    f"lsof -i :{port} | grep '{localhost}' | grep -v 'PID' | awk '{{print $2; exit}}'",
                     shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 out_us, err = get_pid_tun_us.communicate()
 
@@ -164,7 +170,7 @@ class ApiDB:
                                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 kill, err = kill_tun.communicate()
 
-                tunnel()
+                tunnel_specific(port,env,localhost)
                 try:
                     conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
                                             connect_timeout=10)
@@ -189,6 +195,9 @@ class ApiDB:
         vals = get_val(get.home_folder + "/.secret/secrets.json")
         user = vals['user']
         password = vals['password']
+        port = "9002"
+        env = "Australia"
+        localhost = "localhost:dynamid (LISTEN)"
 
         database = "orca"
         user = user
@@ -203,9 +212,9 @@ class ApiDB:
         except psycopg2.OperationalError as error:
             error_msg = str(error)
             if "server closed" or "Connection refused" or "timed out" in error_msg:
-                print(bcolors.FAIL + "Australia Tunnel is down, Resetting Tunnel please wait..." + bcolors.ENDC)
+                print(bcolors.FAIL + f"{env} Tunnel is down, Resetting Tunnel please wait..." + bcolors.ENDC)
                 get_pid_tun_au = subprocess.Popen(
-                    "lsof -i :9002 | grep 'localhost:dynamid (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
+                    f"lsof -i :{port} | grep '{localhost}' | grep -v 'PID' | awk '{{print $2; exit}}'",
                     shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 out_au, err = get_pid_tun_au.communicate()
 
@@ -217,7 +226,7 @@ class ApiDB:
                                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 kill, err = kill_tun.communicate()
 
-                tunnel()
+                tunnel_specific(port,env,localhost)
                 try:
                     conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
                                             connect_timeout=10)
@@ -242,6 +251,9 @@ class ApiDB:
         vals = get_val(get.home_folder + "/.secret/secrets.json")
         user = vals['user']
         password = vals['password']
+        port = "9003"
+        env = "India"
+        localhost = "localhost:9003 (LISTEN)"
 
         database = "orca"
         user = user
@@ -258,7 +270,7 @@ class ApiDB:
             if "server closed" or "Connection refused" or "timed out" in error_msg:
                 print(bcolors.FAIL + "India Tunnel is down, Resetting Tunnel please wait..." + bcolors.ENDC)
                 get_pid_tun_in = subprocess.Popen(
-                    "lsof -i :9003 | grep 'localhost:9003 (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
+                    f"lsof -i :{port} | grep '{localhost}' | grep -v 'PID' | awk '{{print $2; exit}}'",
                     shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 out_in, err = get_pid_tun_in.communicate()
 
@@ -269,7 +281,7 @@ class ApiDB:
                                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 kill, err = kill_tun.communicate()
 
-                tunnel()
+                tunnel_specific(port,env,localhost)
                 try:
                     conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
                                             connect_timeout=10)
@@ -294,6 +306,9 @@ class ApiDB:
         vals = get_val(get.home_folder + "/.secret/secrets.json")
         user = vals['user']
         password = vals['password']
+        port = "9003"
+        env = "GOV"
+        localhost = "localhost:9004 (LISTEN)"
 
         database = "orca"
         user = user
@@ -310,7 +325,7 @@ class ApiDB:
             if "server closed" or "Connection refused" or "timed out" in error_msg:
                 print(bcolors.FAIL + "GOV Tunnel is down, Resetting Tunnel please wait..." + bcolors.ENDC)
                 get_pid_tun_gov = subprocess.Popen(
-                    "lsof -i :9004 | grep 'localhost:9004 (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
+                    f"lsof -i :{port} | grep '{localhost}' | grep -v 'PID' | awk '{{print $2; exit}}'",
                     shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 out_gov, err = get_pid_tun_gov.communicate()
 
@@ -321,7 +336,7 @@ class ApiDB:
                                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 kill, err = kill_tun.communicate()
 
-                tunnel()
+                tunnel_specific(port,env,localhost)
                 try:
                     conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
                                             connect_timeout=10)
@@ -1759,6 +1774,55 @@ def tunnel():
                 break
     confirm_tunel()
 
+def tunnel_specific(port,env,localhost):
+    config_bastion()
+
+    #configure max time for Tunnels to be opened
+    max_time = "08:00:00"
+    max_len = 9
+
+    # check if tunnels are opened in case tunnels are open more then max_time, the tunnel will be reset
+    # checking tunnel
+    need_tunnel = subprocess.Popen(f"netstat -an | grep {port}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    need_tunnel_out, err = need_tunnel.communicate()
+    need = f"127.0.0.1.{port}".encode()
+    # if Tunnel open
+    if need in need_tunnel_out:
+        get_pid_tun_1 = subprocess.Popen(
+            f"lsof -i :{port} | grep '{localhost}' | grep -v 'PID' | awk '{{print $2; exit}}'", shell=True,
+            executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out_1, err = get_pid_tun_1.communicate()
+        pid_1_str = out_1.decode()
+        pid_1 = pid_1_str[:-1]
+        time_tun_1 = subprocess.Popen(f"ps -o etime {pid_1} | grep -v 'ELAPSED'", shell=True, executable="/bin/zsh",
+                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out_time_1, err = time_tun_1.communicate()
+        out_time_1_str = out_time_1.decode()
+
+        time_pid_1 = out_time_1_str[:-1]
+        # if found open more then max_time, reset tunnel
+        if time_pid_1 > max_time or len(time_pid_1) >= max_len:
+            kill_pid_1 = subprocess.Popen(f"kill -9 {pid_1}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            out_pid_1, err = kill_pid_1.communicate()
+            main_tunnel = subprocess.Popen(f"aws_rds_tunnel production {port}", shell=True, executable="/bin/zsh",
+                                           stdout=subprocess.PIPE)
+            search_val = f"localhost:{port}".encode()
+            for line in main_tunnel.stdout:
+                if search_val in line:
+                    print(bcolors.OKBLUE + f"Established tunnel to production environment {env}" + bcolors.ENDC)
+                    # time.sleep(1)
+                    break
+
+    else:
+        main_tunnel = subprocess.Popen(f"aws_rds_tunnel production {port}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+        search_val = f"localhost:{port}".encode()
+        for line in main_tunnel.stdout:
+            if search_val in line:
+                print(bcolors.OKBLUE + f"Established tunnel to production environment {env}" + bcolors.ENDC)
+                time.sleep(1)
+                break
+    confirm_tunel_specific(port, localhost)
+
 def confirm_tunel():
     # make sure all tunnels are up and running
     need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
@@ -1810,6 +1874,19 @@ def confirm_tunel():
                                             stderr=subprocess.STDOUT)
         need_tunnel_out, err = need_tunnel_9004.communicate()
         time.sleep(1)
+
+
+def confirm_tunel_specific(port,localhost):
+    # make sure all tunnels are up and running
+    need_tunnel = subprocess.Popen(f"lsof -i :{port}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
+                                        stderr=subprocess.STDOUT)
+    need_tunnel_out, err = need_tunnel.communicate()
+    need = f"{localhost}".encode()
+    while need not in need_tunnel_out:
+        need_tunnel = subprocess.Popen(f"lsof -i :{port}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
+                                            stderr=subprocess.STDOUT)
+        need_tunnel_out, err = need_tunnel.communicate()
+        # time.sleep(1)
 
 def garbage():
     if os.path.exists(var.file):
