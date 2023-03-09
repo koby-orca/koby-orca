@@ -638,12 +638,12 @@ class options:
                 df10 = ApiDB().query_api_db_us(
                     query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{k8s_str}' limit 50""",
                     port=9000)
-            if get.geo_search[0] == 'eu':
+            elif get.geo_search[0] == 'eu':
                 df10 = ApiDB().query_api_db_eu(
                     query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{k8s_str}' limit 50""",
                     port=9001)
             if get.geo_search[0] == 'ap':
-               df10 = ApiDB().query_api_db_au(
+                df10 = ApiDB().query_api_db_au(
                     query=f"""select id from api_cloudaccount where (cloud_provider_id) = '{k8s_str}' limit 50""",
                     port=9002)
             if get.geo_search[0] == 'in':
@@ -664,27 +664,27 @@ class options:
             exit()
         else:
             account_id = df10['id'][0]
-
-            if get.geo_search[0] == 'us':
-                df5 = ApiDB().query_api_db_us(
-                    query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 50""",
-                    port=9000)
-            elif get.geo_search[0] == 'eu':
-                df5 = ApiDB().query_api_db_eu(
-                    query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 50""",
-                    port=9001)
-            elif get.geo_search[0] == 'ap':
-                df5 = ApiDB().query_api_db_au(
-                    query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 50""",
-                    port=9002)
-            elif get.geo_search[0] == 'in':
-                df5 = ApiDB().query_api_db_in(
-                    query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 50""",
-                    port=9003)
-            elif get.geo_search[0] == 'gov':
-                df5 = ApiDB().query_api_db_gov(
-                    query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 50""",
-                    port=9004)
+            if get.geo_search != None:
+                if get.geo_search[0] == 'us':
+                    df5 = ApiDB().query_api_db_us(
+                        query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 50""",
+                        port=9000)
+                elif get.geo_search[0] == 'eu':
+                    df5 = ApiDB().query_api_db_eu(
+                        query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 50""",
+                        port=9001)
+                elif get.geo_search[0] == 'ap':
+                    df5 = ApiDB().query_api_db_au(
+                        query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 50""",
+                        port=9002)
+                elif get.geo_search[0] == 'in':
+                    df5 = ApiDB().query_api_db_in(
+                        query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 50""",
+                        port=9003)
+                elif get.geo_search[0] == 'gov':
+                    df5 = ApiDB().query_api_db_gov(
+                        query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 50""",
+                        port=9004)
             else:
                 df5 = ApiDB().query_all_regions(query=f"""select cluster_name,id,cluster_type,location,status from api_kubernetescluster where (cloud_account_id) = '{account_id}' limit 50""")
             
