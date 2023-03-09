@@ -98,14 +98,14 @@ class ApiDB:
         host = "localhost"
         try:
             conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
-                                    connect_timeout=10)
+                                    connect_timeout=5)
             df = pd.read_sql(con=conn, sql=query)
             pd.set_option("display.max_colwidth", 199)
             return df
         except psycopg2.OperationalError as error:
             error_msg = str(error)
             if "server closed" or "Connection refused" or "timed out" in error_msg:
-                print(bcolors.FAIL + f"{env} Tunnel is down, Resetting Tunnel please wait..." + bcolors.ENDC)
+                print(bcolors.FAIL + "US Tunnel is down, Resetting Tunnel please wait..." + bcolors.ENDC)
                 get_pid_tun_us = subprocess.Popen(
                     "lsof -i :9000 | grep 'localhost:cslistener (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
                     shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -153,7 +153,7 @@ class ApiDB:
         host = "localhost"
         try:
             conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
-                                    connect_timeout=10)
+                                    connect_timeout=5)
             df = pd.read_sql(con=conn, sql=query)
             pd.set_option("display.max_colwidth", 199)
             return df
@@ -208,7 +208,7 @@ class ApiDB:
         host = "localhost"
         try:
             conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
-                                    connect_timeout=10)
+                                    connect_timeout=5)
             df = pd.read_sql(con=conn, sql=query)
             pd.set_option("display.max_colwidth", 199)
             return df
@@ -264,14 +264,14 @@ class ApiDB:
         host = "localhost"
         try:
             conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
-                                    connect_timeout=10)
+                                    connect_timeout=5)
             df = pd.read_sql(con=conn, sql=query)
             pd.set_option("display.max_colwidth", 199)
             return df
         except psycopg2.OperationalError as error:
             error_msg = str(error)
             if "server closed" or "Connection refused" or "timed out" in error_msg:
-                print(bcolors.FAIL + f"{env} Tunnel is down, Resetting Tunnel please wait..." + bcolors.ENDC)
+                print(bcolors.FAIL + "India Tunnel is down, Resetting Tunnel please wait..." + bcolors.ENDC)
                 get_pid_tun_in = subprocess.Popen(
                     f"lsof -i :{port} | grep '{localhost}' | grep -v 'PID' | awk '{{print $2; exit}}'",
                     shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -319,14 +319,14 @@ class ApiDB:
         host = "localhost"
         try:
             conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
-                                    connect_timeout=10)
+                                    connect_timeout=5)
             df = pd.read_sql(con=conn, sql=query)
             pd.set_option("display.max_colwidth", 199)
             return df
         except psycopg2.OperationalError as error:
             error_msg = str(error)
             if "server closed" or "Connection refused" or "timed out" in error_msg:
-                print(bcolors.FAIL + f"{env} Tunnel is down, Resetting Tunnel please wait..." + bcolors.ENDC)
+                print(bcolors.FAIL + "GOV Tunnel is down, Resetting Tunnel please wait..." + bcolors.ENDC)
                 get_pid_tun_gov = subprocess.Popen(
                     f"lsof -i :{port} | grep '{localhost}' | grep -v 'PID' | awk '{{print $2; exit}}'",
                     shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -371,7 +371,7 @@ class ApiDB:
         host = "localhost"
         try:
             conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
-                                    connect_timeout=10)
+                                    connect_timeout=5)
             df = pd.read_sql(con=conn, sql=query)
             pd.set_option("display.max_colwidth", 199)
             return df
@@ -429,7 +429,7 @@ class ApiDB:
         host = "localhost"
         try:
             conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
-                                    connect_timeout=10)
+                                    connect_timeout=5)
             df = pd.read_sql(con=conn, sql=query)
             pd.set_option("display.max_colwidth", 199)
             return df
