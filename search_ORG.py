@@ -890,36 +890,6 @@ class options:
             query = f"""select api_organization.name as "organization_name",api_cloudaccount.name,api_cloudaccount.id,api_cloudaccount.cloud_provider_id,api_cloudaccount.created_time from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (api_cloudaccount.id) = '{cloudaccount_id_str}' limit 50"""
             df10 = ApiDB().query_all_regions(query=query)
 
-        # if get.geo_search != None:
-        #     if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[
-        #         0] != 'in' and get.geo_search[0] != 'gov':
-        #         print(
-        #             "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
-        #         exit()
-        #     elif get.geo_search[0] == 'us':
-        #         df10 = ApiDB().query_api_db_us(
-        #             query=f"""select api_organization.name as "organization_name",api_cloudaccount.name,api_cloudaccount.id,api_cloudaccount.cloud_provider_id,api_cloudaccount.created_time from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (api_cloudaccount.id) = '{cloudaccount_id_str}' limit 50""",
-        #             port=9000)
-        #     elif get.geo_search[0] == 'eu':
-        #         df10 = ApiDB().query_api_db_eu(
-        #             query=f"""select api_organization.name as "organization_name",api_cloudaccount.name,api_cloudaccount.id,api_cloudaccount.cloud_provider_id,api_cloudaccount.created_time from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (api_cloudaccount.id) = '{cloudaccount_id_str}' limit 50""",
-        #             port=9001)
-        #     elif get.geo_search[0] == 'ap':
-        #         df10 = ApiDB().query_api_db_au(
-        #             query=f"""select api_organization.name as "organization_name",api_cloudaccount.name,api_cloudaccount.id,api_cloudaccount.cloud_provider_id,api_cloudaccount.created_time from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (api_cloudaccount.id) = '{cloudaccount_id_str}' limit 50""",
-        #             port=9002)
-        #     elif get.geo_search[0] == 'in':
-        #         df10 = ApiDB().query_api_db_in(
-        #             query=f"""select api_organization.name as "organization_name",api_cloudaccount.name,api_cloudaccount.id,api_cloudaccount.cloud_provider_id,api_cloudaccount.created_time from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (api_cloudaccount.id) = '{cloudaccount_id_str}' limit 50""",
-        #             port=9003)
-        #     elif get.geo_search[0] == 'gov':
-        #         df10 = ApiDB().query_api_db_gov(
-        #             query=f"""select api_organization.name as "organization_name",api_cloudaccount.name,api_cloudaccount.id,api_cloudaccount.cloud_provider_id,api_cloudaccount.created_time from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (api_cloudaccount.id) = '{cloudaccount_id_str}' limit 50""",
-        #             port=9004)
-        # else:
-        #     df10 = ApiDB().query_all_regions(
-        #         query=f"""select api_organization.name as "organization_name",api_cloudaccount.name,api_cloudaccount.id,api_cloudaccount.cloud_provider_id,api_cloudaccount.created_time from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (api_cloudaccount.id) = '{cloudaccount_id_str}' limit 50""")
-
         if df10.empty:
             print(bcolors.FAIL + "No CloudAccount ID Found with provided ID" + bcolors.ENDC)
             exit()
@@ -935,35 +905,30 @@ class options:
                         notification_search_str):
             print(bcolors.FAIL + "UUID is not valid, please verify the ORG id" + bcolors.ENDC)
 
-        if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[
-                0] != 'in' and get.geo_search[0] != 'gov':
+        REGION_PORTS = {
+            'us': 9000,
+            'eu': 9001,
+            'ap': 9002,
+            'in': 9003,
+            'gov': 9004,
+        }
+
+        VALID_REGIONS = set(REGION_PORTS.keys())
+
+        if get.geo_search is not None:
+            region = get.geo_search[0]
+            if region not in VALID_REGIONS:
                 print(
-                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}{', '.join(VALID_REGIONS)}{bcolors.ENDC}")
                 exit()
-            elif get.geo_search[0] == 'us':
-                df10 = ApiDB().query_api_db_us(
-                    query=f"""select api_organization.name as "organization_name",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 50""",
-                    port=9000)
-            elif get.geo_search[0] == 'eu':
-                df10 = ApiDB().query_api_db_eu(
-                    query=f"""select api_organization.name as "organization_nam-gcp_confe",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 50""",
-                    port=9001)
-            elif get.geo_search[0] == 'ap':
-                df10 = ApiDB().query_api_db_au(
-                    query=f"""select api_organization.name as "organization_name",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 50""",
-                    port=9002)
-            elif get.geo_search[0] == 'in':
-                df10 = ApiDB().query_api_db_in(
-                    query=f"""select api_organization.name as "organization_name",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 50""",
-                    port=9003)
-            elif get.geo_search[0] == 'gov':
-                df10 = ApiDB().query_api_db_gov(
-                    query=f"""select api_organization.name as "organization_name",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 50""",
-                    port=9004)
+            else:
+                port = REGION_PORTS[region]
+                query = f"""select api_organization.name as "organization_name", organization_id, data, category, type, create_time, update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where organization_id = '{notification_search_str}' limit 50"""
+                df10 = getattr(ApiDB(), f"query_api_db_{region}")(query=query, port=port)
+
         else:
-            df10 = ApiDB().query_all_regions(
-                query=f"""select api_organization.name as "organization_name",organization_id,data,category,type,create_time,update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where (organization_id) = '{notification_search_str}' limit 50""")
+            query = f"""select api_organization.name as "organization_name", organization_id, data, category, type, create_time, update_time from notifications_notification join api_organization on api_organization.id = notifications_notification.organization_id where organization_id = '{notification_search_str}' limit 50"""
+            df10 = ApiDB().query_all_regions(query=query)
 
         if df10.empty:
             print(bcolors.FAIL + "No Notification Found for provided Organization ID" + bcolors.ENDC)
@@ -976,32 +941,24 @@ class options:
 
     def role():
         role_str = get.role_search[0]
+
+        PORTS = {
+            'us': 9000,
+            'eu': 9001,
+            'ap': 9002,
+            'in': 9003,
+            'gov': 9004
+        }
+
         if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[
-                0] != 'in' and get.geo_search[0] != 'gov':
+            region = get.geo_search[0]
+            if region not in PORTS:
                 print(
-                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, ap, in, gov{bcolors.ENDC}")
                 exit()
-            elif get.geo_search[0] == 'us':
-                df = ApiDB().query_api_db_us(
-                    query=f"""SELECT rbac_rbacrole.organization_id, rbac_rbacrole.name,rbac_rbacrole.permission_groups,rbac_rbacrole.is_custom FROM rbac_rbacrole WHERE id IN ( SELECT rbac_rbacuseraccess.role_id FROM rbac_rbacuseraccess WHERE apiuser_id IN ( SELECT id FROM api_apiuser WHERE  api_apiuser.original_email like '%{role_str}%')) limit 50""",
-                    port=9000)
-            elif get.geo_search[0] == 'eu':
-                df = ApiDB().query_api_db_eu(
-                    query=f"""SELECT rbac_rbacrole.organization_id, rbac_rbacrole.name,rbac_rbacrole.permission_groups,rbac_rbacrole.is_custom FROM rbac_rbacrole WHERE id IN ( SELECT rbac_rbacuseraccess.role_id FROM rbac_rbacuseraccess WHERE apiuser_id IN ( SELECT id FROM api_apiuser WHERE  api_apiuser.original_email like '%{role_str}%')) limit 50""",
-                    port=9001)
-            elif get.geo_search[0] == 'ap':
-                df = ApiDB().query_api_db_au(
-                    query=f"""SELECT rbac_rbacrole.organization_id, rbac_rbacrole.name,rbac_rbacrole.permission_groups,rbac_rbacrole.is_custom FROM rbac_rbacrole WHERE id IN ( SELECT rbac_rbacuseraccess.role_id FROM rbac_rbacuseraccess WHERE apiuser_id IN ( SELECT id FROM api_apiuser WHERE  api_apiuser.original_email like '%{role_str}%')) limit 50""",
-                    port=9002)
-            elif get.geo_search[0] == 'in':
-                df = ApiDB().query_api_db_in(
-                    query=f"""SELECT rbac_rbacrole.organization_id, rbac_rbacrole.name,rbac_rbacrole.permission_groups,rbac_rbacrole.is_custom FROM rbac_rbacrole WHERE id IN ( SELECT rbac_rbacuseraccess.role_id FROM rbac_rbacuseraccess WHERE apiuser_id IN ( SELECT id FROM api_apiuser WHERE  api_apiuser.original_email like '%{role_str}%')) limit 50""",
-                    port=9003)
-            elif get.geo_search[0] == 'gov':
-                df = ApiDB().query_api_db_gov(
-                    query=f"""SELECT rbac_rbacrole.organization_id, rbac_rbacrole.name,rbac_rbacrole.permission_groups,rbac_rbacrole.is_custom FROM rbac_rbacrole WHERE id IN ( SELECT rbac_rbacuseraccess.role_id FROM rbac_rbacuseraccess WHERE apiuser_id IN ( SELECT id FROM api_apiuser WHERE  api_apiuser.original_email like '%{role_str}%')) limit 50""",
-                    port=9004)
+            port = PORTS[region]
+            query = f"""SELECT rbac_rbacrole.organization_id, rbac_rbacrole.name,rbac_rbacrole.permission_groups,rbac_rbacrole.is_custom FROM rbac_rbacrole WHERE id IN ( SELECT rbac_rbacuseraccess.role_id FROM rbac_rbacuseraccess WHERE apiuser_id IN ( SELECT id FROM api_apiuser WHERE  api_apiuser.original_email like '%{role_str}%')) limit 50"""
+            df = getattr(ApiDB(), f"query_api_db_{region}")(query=query, port=port)
         else:
             df = ApiDB().query_all_regions(
                 query=f"""SELECT rbac_rbacrole.organization_id, rbac_rbacrole.name,rbac_rbacrole.permission_groups,rbac_rbacrole.is_custom FROM rbac_rbacrole WHERE id IN ( SELECT rbac_rbacuseraccess.role_id FROM rbac_rbacuseraccess WHERE apiuser_id IN ( SELECT id FROM api_apiuser WHERE  api_apiuser.original_email like '%{role_str}%')) limit 50""")
@@ -1020,35 +977,37 @@ class options:
 
     def user():
         user_str = get.user_search[0]
-        if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[
-                0] != 'in' and get.geo_search[0] != 'gov':
+
+        REGION_PORTS = {
+            'us': 9000,
+            'eu': 9001,
+            'ap': 9002,
+            'in': 9003,
+            'gov': 9004
+        }
+
+        VALID_REGIONS = ', '.join(REGION_PORTS.keys())
+
+        if get.geo_search is not None:
+            region = get.geo_search[0]
+            if region in REGION_PORTS:
+                port = REGION_PORTS[region]
+            else:
                 print(
-                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}{VALID_REGIONS}{bcolors.ENDC}")
                 exit()
-            elif get.geo_search[0] == 'us':
-                df3 = ApiDB().query_api_db_us(
-                    query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 50""",
-                    port=9000)
-            elif get.geo_search[0] == 'eu':
-                df3 = ApiDB().query_api_db_eu(
-                    query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 50""",
-                    port=9001)
-            elif get.geo_search[0] == 'ap':
-                df3 = ApiDB().query_api_db_au(
-                    query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 50""",
-                    port=9002)
-            elif get.geo_search[0] == 'in':
-                df3 = ApiDB().query_api_db_in(
-                    query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 50""",
-                    port=9003)
-            elif get.geo_search[0] == 'gov':
-                df3 = ApiDB().query_api_db_gov(
-                    query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 50""",
-                    port=9004)
         else:
-            df3 = ApiDB().query_all_regions(
-                query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 50""")
+            port = None
+
+        if port is not None:
+            query_func = getattr(ApiDB(), f"query_api_db_{region}")
+        else:
+            query_func = ApiDB().query_all_regions
+
+        df3 = query_func(
+            query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 50""",
+            port=port
+        )
 
         if df3.empty:
             print(bcolors.FAIL + "No User Found" + bcolors.ENDC)
@@ -1059,58 +1018,30 @@ class options:
             display(df3)
             print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
 
-    # def invite():
-    #     invite_str = get.invite_search[0]
-    #     if get.geo_search != None:
-    #         if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[0] != 'in' and get.geo_search[0] != 'gov':
-    #             print(
-    #                 "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
-    #             exit()
-    #         else:
-    #             df4 = ApiDB().query_all_regions(query=f"""select api_userinvite.email,api_organization.name as "organization_name",api_userinvite.organization_id,api_userinvite.issue_date,'{var.orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite join api_organization on api_organization.id = api_userinvite.organization_id WHERE lower(original_email) like '%{invite_str}%' limit 50""", regions=get.geo_search[0])
-    #     else:
-    #         df4 = ApiDB().query_all_regions(query=f"""select api_userinvite.email,api_organization.name as "organization_name",api_userinvite.organization_id,api_userinvite.issue_date,'{var.orca_reg_link}' || token || '&email=' || email as invitelink FROM api_userinvite join api_organization on api_organization.id = api_userinvite.organization_id WHERE lower(original_email) like '%{invite_str}%' limit 50""")
-    #
-    #     if df4.empty:
-    #         print(bcolors.FAIL + "No Invite Found" + bcolors.ENDC)
-    #         exit()
-    #     else:
-    #         html(df4)
-    #         print(bcolors.OKBLUE + "We found Invite in our search" + bcolors.ENDC)
-    #         display(df4)
-    #         print(bcolors.OKGREEN + "To see search result open: " + bcolors.ENDC + var.file)
-
     def aws_conf():
         provider_str = get.provider_id[0]
-        if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[
-                0] != 'in' and get.geo_search[0] != 'gov':
+        valid_regions = {
+            'us': 9000,
+            'eu': 9001,
+            'ap': 9002,
+            'in': 9003,
+            'gov': 9004,
+        }
+
+        if get.geo_search is not None:
+            region = get.geo_search[0]
+            if region not in valid_regions:
                 print(
                     "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == 'us':
-                df7 = ApiDB().query_api_db_us(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 50""",
-                    port=9000)
-            elif get.geo_search[0] == 'eu':
-                df7 = ApiDB().query_api_db_eu(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 50""",
-                    port=9001)
-            elif get.geo_search[0] == 'ap':
-                df7 = ApiDB().query_api_db_au(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 50""",
-                    port=9002)
-            elif get.geo_search[0] == 'in':
-                df7 = ApiDB().query_api_db_in(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 50""",
-                    port=9003)
-            elif get.geo_search[0] == 'gov':
-                df7 = ApiDB().query_api_db_gov(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 50""",
-                    port=9004)
+            else:
+                port = valid_regions[region]
         else:
-            df7 = ApiDB().query_all_regions(
-                query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 50""")
+            port = None
+
+        query = f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as CloudAccount_id,api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_str}' limit 50"""
+
+        df7 = getattr(ApiDB(), f"query_api_db_{region}")(query=query, port=port)
 
         if df7.empty:
             print(
@@ -1119,27 +1050,12 @@ class options:
             exit()
         else:
             org_name = df7.organization_name[0]
-            if get.geo_search != None:
-                if get.geo_search[0] == 'us':
-                    df8 = ApiDB().query_api_db_us(
-                        query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where name like '%{org_name}%' limit 50""",
-                        port=9000)
-                elif get.geo_search[0] == 'eu':
-                    df8 = ApiDB().query_api_db_eu(
-                        query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where name like '%{org_name}%' limit 50""",
-                        port=9001)
-                elif get.geo_search[0] == 'ap':
-                    df8 = ApiDB().query_api_db_au(
-                        query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where name like '%{org_name}%' limit 50""",
-                        port=9002)
-                elif get.geo_search[0] == 'in':
-                    df8 = ApiDB().query_api_db_in(
-                        query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where name like '%{org_name}%' limit 50""",
-                        port=9003)
-                elif get.geo_search[0] == 'gov':
-                    df8 = ApiDB().query_api_db_gov(
-                        query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where name like '%{org_name}%' limit 50""",
-                        port=9004)
+            if get.geo_search is not None:
+                geo_to_port = {'us': 9000, 'eu': 9001, 'ap': 9002, 'in': 9003, 'gov': 9004}
+                port = geo_to_port.get(get.geo_search[0])
+                if port is not None:
+                    query = f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where name like '%{org_name}%' limit 50"""
+                    df8 = getattr(ApiDB(), f"query_api_db_{region}")(query=query, port=port)
             else:
                 df8 = ApiDB().query_all_regions(
                     query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where name like '%{org_name}%' limit 50""")
@@ -1166,35 +1082,28 @@ More info can be found https://orcasecurity.atlassian.net/wiki/spaces/MVP/pages/
     def gcp_conf():
         gcp_str = get.gcp_id[0]
 
-        if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[
-                0] != 'in' and get.geo_search[0] != 'gov':
+        regions = {
+            'us': {'method': 'query_api_db_us', 'port': 9000},
+            'eu': {'method': 'query_api_db_eu', 'port': 9001},
+            'ap': {'method': 'query_api_db_au', 'port': 9002},
+            'in': {'method': 'query_api_db_in', 'port': 9003},
+            'gov': {'method': 'query_api_db_gov', 'port': 9004}
+        }
+
+        if get.geo_search is not None:
+            region_code = get.geo_search[0]
+            if region_code not in regions:
                 print(
-                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, ap, in, gov{bcolors.ENDC}")
                 exit()
-            elif get.geo_search[0] == 'us':
-                df8 = ApiDB().query_api_db_us(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 50""",
-                    port=9000)
-            elif get.geo_search[0] == 'eu':
-                df8 = ApiDB().query_api_db_eu(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 50""",
-                    port=9001)
-            elif get.geo_search[0] == 'ap':
-                df8 = ApiDB().query_api_db_au(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 50""",
-                    port=9002)
-            elif get.geo_search[0] == 'in':
-                df8 = ApiDB().query_api_db_in(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 50""",
-                    port=9003)
-            elif get.geo_search[0] == 'gov':
-                df8 = ApiDB().query_api_db_gov(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 50""",
-                    port=9004)
+
+            region = regions[region_code]
+            method = getattr(ApiDB(), region['method'])
+            query = f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 50"""
+            df8 = method(query=query, port=region['port'])
         else:
-            df8 = ApiDB().query_all_regions(
-                query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 50""")
+            query = f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{gcp_str}%' limit 50"""
+            df8 = ApiDB().query_all_regions(query=query)
 
         if df8.empty:
             print(
@@ -1241,32 +1150,22 @@ gcloud config set project {aname}
         asset_id_search = getattr(args, "res_col")[1]
         jwt_token_search = getattr(args, "res_col")[2]
 
-        if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[
-                0] != 'in' and get.geo_search[0] != 'gov':
-                print(
-                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+        valid_regions = {
+            'us': {'func': ApiDB().query_api_db_us, 'port': 9000},
+            'eu': {'func': ApiDB().query_api_db_eu, 'port': 9001},
+            'ap': {'func': ApiDB().query_api_db_au, 'port': 9002},
+            'in': {'func': ApiDB().query_api_db_in, 'port': 9003},
+            'gov': {'func': ApiDB().query_api_db_gov, 'port': 9004}
+        }
+
+        if get.geo_search is not None:
+            region = get.geo_search[0]
+            if region not in valid_regions:
+                print("The argument --region can only be: us, eu, ap, in, gov")
                 exit()
-            elif get.geo_search[0] == 'us':
-                df9 = ApiDB().query_api_db_us(
-                    query=f"""select region,api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9000)
-            elif get.geo_search[0] == 'eu':
-                df9 = ApiDB().query_api_db_eu(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9001)
-            elif get.geo_search[0] == 'ap':
-                df9 = ApiDB().query_api_db_au(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9002)
-            elif get.geo_search[0] == 'in':
-                df9 = ApiDB().query_api_db_in(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9003)
-            elif get.geo_search[0] == 'gov':
-                df9 = ApiDB().query_api_db_gov(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9004)
+            df9 = valid_regions[region]['func'](
+                query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
+                port=valid_regions[region]['port'])
         else:
             df9 = ApiDB().query_all_regions(
                 query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""")
@@ -1311,35 +1210,27 @@ gcloud config set project {aname}
         image_id_search = getattr(args, "res_containerimage")[1]
         jwt_token_search = getattr(args, "res_containerimage")[2]
 
-        if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[
-                0] != 'in' and get.geo_search[0] != 'gov':
+        valid_regions = {
+            'us': 9000,
+            'eu': 9001,
+            'ap': 9002,
+            'in': 9003,
+            'gov': 9004
+        }
+
+        if get.geo_search is not None:
+            region = get.geo_search[0]
+            if region not in valid_regions:
                 print(
-                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, ap, in, gov{bcolors.ENDC}")
                 exit()
-            elif get.geo_search[0] == 'us':
-                df9 = ApiDB().query_api_db_us(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9000)
-            elif get.geo_search[0] == 'eu':
-                df9 = ApiDB().query_api_db_eu(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9001)
-            elif get.geo_search[0] == 'ap':
-                df9 = ApiDB().query_api_db_au(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9002)
-            elif get.geo_search[0] == 'in':
-                df9 = ApiDB().query_api_db_in(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9003)
-            elif get.geo_search[0] == 'gov':
-                df9 = ApiDB().query_api_db_gov(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9004)
+            port = valid_regions[region]
+            df9 = getattr(ApiDB(), f"query_api_db_{region}")(
+                query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name, api_cloudaccount.id as "CloudAccount_id", api_cloudaccount.organization_id, api_cloudaccount.aws_role_arn, api_cloudaccount.role_external_id, api_cloudaccount.scan_inaccount, api_cloudaccount.created_time, api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
+                port=port)
         else:
             df9 = ApiDB().query_all_regions(
-                query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""")
+                query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name, api_cloudaccount.id as "CloudAccount_id", api_cloudaccount.organization_id, api_cloudaccount.aws_role_arn, api_cloudaccount.role_external_id, api_cloudaccount.scan_inaccount, api_cloudaccount.created_time, api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""")
 
         if df9.empty:
             print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
@@ -1379,35 +1270,27 @@ gcloud config set project {aname}
         bucket_name_search = getattr(args, "res_s3")[1]
         jwt_token_search = getattr(args, "res_s3")[2]
 
-        if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[
-                0] != 'in' and get.geo_search[0] != 'gov':
+        region_ports = {
+            'us': 9000,
+            'eu': 9001,
+            'ap': 9002,
+            'in': 9003,
+            'gov': 9004
+        }
+
+        if get.geo_search is not None:
+            region = get.geo_search[0]
+            if region not in region_ports:
                 print(
-                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, ap, in, gov{bcolors.ENDC}")
                 exit()
-            elif get.geo_search[0] == 'us':
-                df9 = ApiDB().query_api_db_us(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9000)
-            elif get.geo_search[0] == 'eu':
-                df9 = ApiDB().query_api_db_eu(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9001)
-            elif get.geo_search[0] == 'ap':
-                df9 = ApiDB().query_api_db_au(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9002)
-            elif get.geo_search[0] == 'in':
-                df9 = ApiDB().query_api_db_in(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9003)
-            elif get.geo_search[0] == 'gov':
-                df9 = ApiDB().query_api_db_gov(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9004)
+            port = region_ports[region]
+            query = f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50"""
+            df9 = getattr(ApiDB(), f"query_api_db_{region}")(query=query, port=port)
         else:
             df9 = ApiDB().query_all_regions(
-                query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""")
+                query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50"""
+            )
 
         if df9.empty:
             print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
@@ -1446,32 +1329,17 @@ gcloud config set project {aname}
         fargate_asset_id_search = getattr(args, "res_fargate")[1]
         jwt_token_search = getattr(args, "res_fargate")[2]
 
-        if get.geo_search != None:
-            if get.geo_search[0] != 'us' and get.geo_search[0] != 'eu' and get.geo_search[0] != 'ap' and get.geo_search[
-                0] != 'in' and get.geo_search[0] != 'gov':
+        region = {'us': 9000, 'eu': 9001, 'ap': 9002, 'in': 9003, 'gov': 9004}
+
+        if get.geo_search:
+            if get.geo_search[0] not in region:
                 print(
                     "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
                 exit()
-            elif get.geo_search[0] == 'us':
-                df9 = ApiDB().query_api_db_us(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9000)
-            elif get.geo_search[0] == 'eu':
-                df9 = ApiDB().query_api_db_eu(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9001)
-            elif get.geo_search[0] == 'ap':
-                df9 = ApiDB().query_api_db_au(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9002)
-            elif get.geo_search[0] == 'in':
-                df9 = ApiDB().query_api_db_in(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9003)
-            elif get.geo_search[0] == 'gov':
-                df9 = ApiDB().query_api_db_gov(
-                    query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                    port=9004)
+            else:
+                port = region[get.geo_search[0]]
+                query = f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50"""
+                df9 = getattr(ApiDB(), f"query_api_db_{get.geo_search[0]}")(query=query, port=port)
         else:
             df9 = ApiDB().query_all_regions(
                 query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""")
