@@ -73,7 +73,7 @@ class get:
     parser.add_argument("-get_permission",
                         help="Checking Allowed regions - using devenv_customer_access and provided OrcaSecurityRole",
                         nargs=1, metavar=('role'))
-    parser.add_argument('--region', help="Use Specific DB <us OR eu OR ap OR in OR gov>", nargs=1, metavar=('region'))
+    parser.add_argument('--region', help="Use Specific DB <us OR eu OR au OR in OR gov>", nargs=1, metavar=('region'))
     # parser.add_argument('--org', help="Use Specific Organization Name, can only be used with -aws_conf flag", nargs=1, metavar=('name'))
     parser.add_argument('--policy_arn', help="get Policy ARN, can only be used with -get_permission flag", nargs=1,
                         metavar=('PolicyArn'))
@@ -388,127 +388,127 @@ class ApiDB:
                 print(bcolors.FAIL + "Please check your Internet connection and try again" + bcolors.ENDC)
                 # print(error_msg)
 
-    def query_api_db(self, query, port):
-        # remove Future Warning text - remove in case need to debug
-        # sys.tracebacklimit = 0
-
-        vals = get_val(get.home_folder + "/.secret/secrets.json")
-        user = vals['user']
-        password = vals['password']
-
-        database = "postgres"
-        user = user
-        password = password
-        host = "localhost"
-        try:
-            conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
-                                    connect_timeout=5)
-            df = pd.read_sql(con=conn, sql=query)
-            pd.set_option("display.max_colwidth", 199)
-            return df
-        except psycopg2.OperationalError as error:
-            error_msg = str(error)
-            if "server closed" or "Connection refused" or "timed out" in error_msg:
-                print(bcolors.FAIL + "US+EU Tunnels are down, Resetting Tunnels please wait..." + bcolors.ENDC)
-                get_pid_tun_us = subprocess.Popen(
-                    "lsof -i :9000 | grep 'localhost:cslistener (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
-                    shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                out_us, err = get_pid_tun_us.communicate()
-                get_pid_tun_eu = subprocess.Popen(
-                    "lsof -i :9001 | grep 'localhost:etlservicemgr (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
-                    shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                out_eu, err = get_pid_tun_eu.communicate()
-
-                pid_us_str = out_us.decode()
-                pid_eu_str = out_eu.decode()
-                pid_us = pid_us_str[:-1]
-                pid_eu = pid_eu_str[:-1]
-
-                kill_tun = subprocess.Popen(f"kill {pid_us} {pid_eu}", shell=True, executable="/bin/zsh",
-                                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                kill, err = kill_tun.communicate()
-
-                tunnel()
-                try:
-                    conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
-                                            connect_timeout=10)
-                    df = pd.read_sql(con=conn, sql=query)
-                    pd.set_option("display.max_colwidth", 199)
-                    return df
-                except psycopg2.OperationalError as error:
-                    error_msg = str(error)
-                    if "server closed" or "Connection refused" or "timed out" in error_msg:
-                        print(bcolors.FAIL + "Please check your Internet connection and try again" + bcolors.ENDC)
-            elif "password authentication failed" in error_msg:
-                print(
-                    bcolors.FAIL + "Please check your secret file (~/.secret) and confirm User and Password are correct" + bcolors.ENDC)
-            else:
-                print(bcolors.FAIL + "Please check your Internet connection and try again" + bcolors.ENDC)
-                # print(error_msg)
-
-    def query_api_db_ap(self, query, port):
-        # remove Future Warning text - remove in case need to debug
-        # sys.tracebacklimit = 0
-
-        vals = get_val(get.home_folder + "/.secret/secrets.json")
-        user = vals['user']
-        password = vals['password']
-
-        database = "orca"
-        user = user
-        password = password
-        host = "localhost"
-        try:
-            conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
-                                    connect_timeout=5)
-            df = pd.read_sql(con=conn, sql=query)
-            pd.set_option("display.max_colwidth", 199)
-            return df
-        except psycopg2.OperationalError as error:
-            error_msg = str(error)
-            if "server closed" or "Connection refused" or "timed out" in error_msg:
-                print(bcolors.FAIL + "EU+India+GOV Tunnels are down, Resetting Tunnels please wait..." + bcolors.ENDC)
-                get_pid_tun_au = subprocess.Popen(
-                    "lsof -i :9002 | grep 'localhost:dynamid (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
-                    shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                out_au, err = get_pid_tun_au.communicate()
-                get_pid_tun_in = subprocess.Popen(
-                    "lsof -i :9003 | grep 'localhost:9003 (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
-                    shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                out_in, err = get_pid_tun_in.communicate()
-                get_pid_tun_gov = subprocess.Popen(
-                    "lsof -i :9004 | grep 'localhost:9004 (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
-                    shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                out_gov, err = get_pid_tun_gov.communicate()
-
-                pid_au_str = out_au.decode()
-                pid_in_str = out_in.decode()
-                pid_gov_str = out_gov.decode()
-                pid_au = pid_au_str[:-1]
-                pid_in = pid_in_str[:-1]
-                pid_gov = pid_gov_str[:-1]
-
-                kill_tun = subprocess.Popen(f"kill {pid_au} {pid_in} {pid_gov}", shell=True, executable="/bin/zsh",
-                                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                kill, err = kill_tun.communicate()
-
-                tunnel()
-                try:
-                    conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
-                                            connect_timeout=10)
-                    df = pd.read_sql(con=conn, sql=query)
-                    pd.set_option("display.max_colwidth", 199)
-                    return df
-                except psycopg2.OperationalError as error:
-                    error_msg = str(error)
-                    if "server closed" or "Connection refused" or "timed out" in error_msg:
-                        print(bcolors.FAIL + "Please check your Internet connection and try again" + bcolors.ENDC)
-            elif "password authentication failed" in error_msg:
-                print(
-                    bcolors.FAIL + "Please check your secret file (~/.secret) and confirm User and Password are correct" + bcolors.ENDC)
-            else:
-                print(bcolors.FAIL + "Please check your Internet connection and try again" + bcolors.ENDC)
-                # print(error_msg)
+    # def query_api_db(self, query, port):
+    #     # remove Future Warning text - remove in case need to debug
+    #     # sys.tracebacklimit = 0
+    #
+    #     vals = get_val(get.home_folder + "/.secret/secrets.json")
+    #     user = vals['user']
+    #     password = vals['password']
+    #
+    #     database = "postgres"
+    #     user = user
+    #     password = password
+    #     host = "localhost"
+    #     try:
+    #         conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
+    #                                 connect_timeout=5)
+    #         df = pd.read_sql(con=conn, sql=query)
+    #         pd.set_option("display.max_colwidth", 199)
+    #         return df
+    #     except psycopg2.OperationalError as error:
+    #         error_msg = str(error)
+    #         if "server closed" or "Connection refused" or "timed out" in error_msg:
+    #             print(bcolors.FAIL + "US+EU Tunnels are down, Resetting Tunnels please wait..." + bcolors.ENDC)
+    #             get_pid_tun_us = subprocess.Popen(
+    #                 "lsof -i :9000 | grep 'localhost:cslistener (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
+    #                 shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    #             out_us, err = get_pid_tun_us.communicate()
+    #             get_pid_tun_eu = subprocess.Popen(
+    #                 "lsof -i :9001 | grep 'localhost:etlservicemgr (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
+    #                 shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    #             out_eu, err = get_pid_tun_eu.communicate()
+    #
+    #             pid_us_str = out_us.decode()
+    #             pid_eu_str = out_eu.decode()
+    #             pid_us = pid_us_str[:-1]
+    #             pid_eu = pid_eu_str[:-1]
+    #
+    #             kill_tun = subprocess.Popen(f"kill {pid_us} {pid_eu}", shell=True, executable="/bin/zsh",
+    #                                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    #             kill, err = kill_tun.communicate()
+    #
+    #             tunnel()
+    #             try:
+    #                 conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
+    #                                         connect_timeout=10)
+    #                 df = pd.read_sql(con=conn, sql=query)
+    #                 pd.set_option("display.max_colwidth", 199)
+    #                 return df
+    #             except psycopg2.OperationalError as error:
+    #                 error_msg = str(error)
+    #                 if "server closed" or "Connection refused" or "timed out" in error_msg:
+    #                     print(bcolors.FAIL + "Please check your Internet connection and try again" + bcolors.ENDC)
+    #         elif "password authentication failed" in error_msg:
+    #             print(
+    #                 bcolors.FAIL + "Please check your secret file (~/.secret) and confirm User and Password are correct" + bcolors.ENDC)
+    #         else:
+    #             print(bcolors.FAIL + "Please check your Internet connection and try again" + bcolors.ENDC)
+    #             # print(error_msg)
+    #
+    # def query_api_db_ap(self, query, port):
+    #     # remove Future Warning text - remove in case need to debug
+    #     # sys.tracebacklimit = 0
+    #
+    #     vals = get_val(get.home_folder + "/.secret/secrets.json")
+    #     user = vals['user']
+    #     password = vals['password']
+    #
+    #     database = "orca"
+    #     user = user
+    #     password = password
+    #     host = "localhost"
+    #     try:
+    #         conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
+    #                                 connect_timeout=5)
+    #         df = pd.read_sql(con=conn, sql=query)
+    #         pd.set_option("display.max_colwidth", 199)
+    #         return df
+    #     except psycopg2.OperationalError as error:
+    #         error_msg = str(error)
+    #         if "server closed" or "Connection refused" or "timed out" in error_msg:
+    #             print(bcolors.FAIL + "EU+India+GOV Tunnels are down, Resetting Tunnels please wait..." + bcolors.ENDC)
+    #             get_pid_tun_au = subprocess.Popen(
+    #                 "lsof -i :9002 | grep 'localhost:dynamid (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
+    #                 shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    #             out_au, err = get_pid_tun_au.communicate()
+    #             get_pid_tun_in = subprocess.Popen(
+    #                 "lsof -i :9003 | grep 'localhost:9003 (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
+    #                 shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    #             out_in, err = get_pid_tun_in.communicate()
+    #             get_pid_tun_gov = subprocess.Popen(
+    #                 "lsof -i :9004 | grep 'localhost:9004 (LISTEN)' | grep -v 'PID' | awk '{print $2; exit}'",
+    #                 shell=True, executable="/bin/zsh", stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    #             out_gov, err = get_pid_tun_gov.communicate()
+    #
+    #             pid_au_str = out_au.decode()
+    #             pid_in_str = out_in.decode()
+    #             pid_gov_str = out_gov.decode()
+    #             pid_au = pid_au_str[:-1]
+    #             pid_in = pid_in_str[:-1]
+    #             pid_gov = pid_gov_str[:-1]
+    #
+    #             kill_tun = subprocess.Popen(f"kill {pid_au} {pid_in} {pid_gov}", shell=True, executable="/bin/zsh",
+    #                                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    #             kill, err = kill_tun.communicate()
+    #
+    #             tunnel()
+    #             try:
+    #                 conn = psycopg2.connect(database=database, user=user, password=password, host=host, port=port,
+    #                                         connect_timeout=10)
+    #                 df = pd.read_sql(con=conn, sql=query)
+    #                 pd.set_option("display.max_colwidth", 199)
+    #                 return df
+    #             except psycopg2.OperationalError as error:
+    #                 error_msg = str(error)
+    #                 if "server closed" or "Connection refused" or "timed out" in error_msg:
+    #                     print(bcolors.FAIL + "Please check your Internet connection and try again" + bcolors.ENDC)
+    #         elif "password authentication failed" in error_msg:
+    #             print(
+    #                 bcolors.FAIL + "Please check your secret file (~/.secret) and confirm User and Password are correct" + bcolors.ENDC)
+    #         else:
+    #             print(bcolors.FAIL + "Please check your Internet connection and try again" + bcolors.ENDC)
+    #             # print(error_msg)
 
     def query_all_regions(self, query, regions="all"):
         aws_connect()
@@ -530,31 +530,31 @@ class ApiDB:
         ret = pd.DataFrame()
         for port in ports:
             if port == 9000:
-                df = self.query_api_db(query, port=port)
+                df = self.query_api_db_us(query, port=port)
                 if df is not None:
                     df["region"] = "us"
                 else:
                     exit()
             elif port == 9001:
-                df = self.query_api_db(query, port=port)
+                df = self.query_api_db_eu(query, port=port)
                 if df is not None:
                     df["region"] = "eu"
                 else:
                     exit()
             elif port == 9002:
-                df = self.query_api_db_ap(query, port=port)
+                df = self.query_api_db_au(query, port=port)
                 if df is not None:
                     df["region"] = "ap"
                 else:
                     exit()
             elif port == 9003:
-                df = self.query_api_db_ap(query, port=port)
+                df = self.query_api_db_in(query, port=port)
                 if df is not None:
                     df["region"] = "in"
                 else:
                     exit()
             elif port == 9004:
-                df = self.query_api_db_ap(query, port=port)
+                df = self.query_api_db_gov(query, port=port)
                 if df is not None:
                     df["region"] = "gov"
                 else:
@@ -571,13 +571,13 @@ class options:
         if get.geo_search != None:
             region_dict = {'us': ('us', 9000),
                            'eu': ('eu', 9001),
-                           'ap': ('au', 9002),
+                           'au': ('au', 9002),
                            'in': ('in', 9003),
                            'gov': ('gov', 9004)}
             region = get.geo_search[0]
             if region not in region_dict:
                 print(
-                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, ap, in, gov{bcolors.ENDC}")
+                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, au, in, gov{bcolors.ENDC}")
                 exit()
             region_code, port = region_dict[region]
             df = getattr(ApiDB(), f"query_api_db_{region_code}")(
@@ -607,7 +607,7 @@ class options:
             print(bcolors.FAIL + "UUID is not valid, please verify the ORG id" + bcolors.ENDC)
         else:
             if get.geo_search != None:
-                regions = ['us', 'eu', 'ap', 'in', 'gov']
+                regions = ['us', 'eu', 'au', 'in', 'gov']
                 if get.geo_search[0] not in regions:
                     print(
                         f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}{', '.join(regions)}{bcolors.ENDC}")
@@ -638,10 +638,10 @@ class options:
 
         if get.geo_search is not None:
             region = get.geo_search[0]
-            regions = ['us', 'eu', 'ap', 'in', 'gov']
+            regions = ['us', 'eu', 'au', 'in', 'gov']
             if region not in regions:
                 print(
-                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au, in, gov" + bcolors.ENDC)
                 exit()
             query = f"""select id from api_cloudaccount where (cloud_provider_id) = '{k8s_str}' limit 50"""
             port = 9000 + regions.index(region)
@@ -657,7 +657,7 @@ class options:
             account_id = df10['id'][0]
             if get.geo_search != None:
                 region = get.geo_search[0]
-                regions = ['us', 'eu', 'ap', 'in', 'gov']
+                regions = ['us', 'eu', 'au', 'in', 'gov']
                 if get.geo_search[0] not in regions:
                     print(
                         f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}{', '.join(regions)}{bcolors.ENDC}")
@@ -695,7 +695,7 @@ class options:
 
         region_dict = {'us': ('us', 9000),
                        'eu': ('eu', 9001),
-                       'ap': ('au', 9002),
+                       'au': ('au', 9002),
                        'in': ('in', 9003),
                        'gov': ('gov', 9004)}
 
@@ -716,13 +716,13 @@ class options:
             if get.geo_search != None:
                 region_dict = {'us': ('us', 9000),
                                'eu': ('eu', 9001),
-                               'ap': ('au', 9002),
+                               'au': ('au', 9002),
                                'in': ('in', 9003),
                                'gov': ('gov', 9004)}
                 region = get.geo_search[0]
                 if region not in region_dict:
                     print(
-                        f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, ap, in, gov{bcolors.ENDC}")
+                        f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, au, in, gov{bcolors.ENDC}")
                     exit()
                 region_code, port = region_dict[region]
                 df5 = getattr(ApiDB(), f"query_api_db_{region_code}")(
@@ -747,7 +747,7 @@ class options:
                     geo_port_map = {
                         'us': 9000,
                         'eu': 9001,
-                        'ap': 9002,
+                        'au': 9002,
                         'in': 9003,
                         'gov': 9004
                     }
@@ -786,7 +786,7 @@ class options:
                     geo_port_map = {
                         'us': 9000,
                         'eu': 9001,
-                        'ap': 9002,
+                        'au': 9002,
                         'in': 9003,
                         'gov': 9004
                     }
@@ -823,7 +823,7 @@ class options:
         cloudaccount_str = get.provider_id_search[0]
 
         if get.geo_search != None:
-            regions = ['us', 'eu', 'ap', 'in', 'gov']
+            regions = ['us', 'eu', 'au', 'in', 'gov']
             if get.geo_search[0] not in regions:
                 print(
                     f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}{', '.join(regions)}{bcolors.ENDC}")
@@ -849,7 +849,7 @@ class options:
     def args_preset():
         preset_str = get.preset_search[0]
         if get.geo_search != None:
-            regions = ['us', 'eu', 'ap', 'in', 'gov']
+            regions = ['us', 'eu', 'au', 'in', 'gov']
             if get.geo_search[0] not in regions:
                 print(
                     f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}{', '.join(regions)}{bcolors.ENDC}")
@@ -876,7 +876,7 @@ class options:
         cloudaccount_id_str = get.cloudaccount_id_search[0]
 
         if get.geo_search != None:
-            regions = ['us', 'eu', 'ap', 'in', 'gov']
+            regions = ['us', 'eu', 'au', 'in', 'gov']
             if get.geo_search[0] not in regions:
                 print(
                     f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}{', '.join(regions)}{bcolors.ENDC}")
@@ -908,7 +908,7 @@ class options:
         REGION_PORTS = {
             'us': 9000,
             'eu': 9001,
-            'ap': 9002,
+            'au': 9002,
             'in': 9003,
             'gov': 9004,
         }
@@ -945,7 +945,7 @@ class options:
         PORTS = {
             'us': 9000,
             'eu': 9001,
-            'ap': 9002,
+            'au': 9002,
             'in': 9003,
             'gov': 9004
         }
@@ -954,7 +954,7 @@ class options:
             region = get.geo_search[0]
             if region not in PORTS:
                 print(
-                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, ap, in, gov{bcolors.ENDC}")
+                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, au, in, gov{bcolors.ENDC}")
                 exit()
             port = PORTS[region]
             query = f"""SELECT rbac_rbacrole.organization_id, rbac_rbacrole.name,rbac_rbacrole.permission_groups,rbac_rbacrole.is_custom FROM rbac_rbacrole WHERE id IN ( SELECT rbac_rbacuseraccess.role_id FROM rbac_rbacuseraccess WHERE apiuser_id IN ( SELECT id FROM api_apiuser WHERE  api_apiuser.original_email like '%{role_str}%')) limit 50"""
@@ -981,7 +981,7 @@ class options:
         REGION_PORTS = {
             'us': 9000,
             'eu': 9001,
-            'ap': 9002,
+            'au': 9002,
             'in': 9003,
             'gov': 9004
         }
@@ -1001,13 +1001,15 @@ class options:
 
         if port is not None:
             query_func = getattr(ApiDB(), f"query_api_db_{region}")
+            df3 = query_func(
+                query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 50""",
+                port=port
+            )
         else:
             query_func = ApiDB().query_all_regions
-
-        df3 = query_func(
-            query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 50""",
-            port=port
-        )
+            df3 = query_func(
+                query=f"""select api_apiuser.original_email,api_organization.name as "organization_name",api_apiuser.organization_id,api_apiuser.status from api_apiuser join api_organization on api_organization.id = api_apiuser.organization_id where lower(original_email) like '%{user_str}%' limit 50"""
+            )
 
         if df3.empty:
             print(bcolors.FAIL + "No User Found" + bcolors.ENDC)
@@ -1023,7 +1025,7 @@ class options:
         valid_regions = {
             'us': 9000,
             'eu': 9001,
-            'ap': 9002,
+            'au': 9002,
             'in': 9003,
             'gov': 9004,
         }
@@ -1032,7 +1034,7 @@ class options:
             region = get.geo_search[0]
             if region not in valid_regions:
                 print(
-                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 port = valid_regions[region]
@@ -1051,7 +1053,7 @@ class options:
         else:
             org_name = df7.organization_name[0]
             if get.geo_search is not None:
-                geo_to_port = {'us': 9000, 'eu': 9001, 'ap': 9002, 'in': 9003, 'gov': 9004}
+                geo_to_port = {'us': 9000, 'eu': 9001, 'au': 9002, 'in': 9003, 'gov': 9004}
                 port = geo_to_port.get(get.geo_search[0])
                 if port is not None:
                     query = f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where name like '%{org_name}%' limit 50"""
@@ -1085,7 +1087,7 @@ More info can be found https://orcasecurity.atlassian.net/wiki/spaces/MVP/pages/
         regions = {
             'us': {'method': 'query_api_db_us', 'port': 9000},
             'eu': {'method': 'query_api_db_eu', 'port': 9001},
-            'ap': {'method': 'query_api_db_au', 'port': 9002},
+            'au': {'method': 'query_api_db_au', 'port': 9002},
             'in': {'method': 'query_api_db_in', 'port': 9003},
             'gov': {'method': 'query_api_db_gov', 'port': 9004}
         }
@@ -1094,7 +1096,7 @@ More info can be found https://orcasecurity.atlassian.net/wiki/spaces/MVP/pages/
             region_code = get.geo_search[0]
             if region_code not in regions:
                 print(
-                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, ap, in, gov{bcolors.ENDC}")
+                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, au, in, gov{bcolors.ENDC}")
                 exit()
 
             region = regions[region_code]
@@ -1153,7 +1155,7 @@ gcloud config set project {aname}
         valid_regions = {
             'us': {'func': ApiDB().query_api_db_us, 'port': 9000},
             'eu': {'func': ApiDB().query_api_db_eu, 'port': 9001},
-            'ap': {'func': ApiDB().query_api_db_au, 'port': 9002},
+            'au': {'func': ApiDB().query_api_db_au, 'port': 9002},
             'in': {'func': ApiDB().query_api_db_in, 'port': 9003},
             'gov': {'func': ApiDB().query_api_db_gov, 'port': 9004}
         }
@@ -1161,7 +1163,7 @@ gcloud config set project {aname}
         if get.geo_search is not None:
             region = get.geo_search[0]
             if region not in valid_regions:
-                print("The argument --region can only be: us, eu, ap, in, gov")
+                print("The argument --region can only be: us, eu, au, in, gov")
                 exit()
             df9 = valid_regions[region]['func'](
                 query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
@@ -1213,7 +1215,7 @@ gcloud config set project {aname}
         valid_regions = {
             'us': 9000,
             'eu': 9001,
-            'ap': 9002,
+            'au': 9002,
             'in': 9003,
             'gov': 9004
         }
@@ -1222,7 +1224,7 @@ gcloud config set project {aname}
             region = get.geo_search[0]
             if region not in valid_regions:
                 print(
-                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, ap, in, gov{bcolors.ENDC}")
+                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, au, in, gov{bcolors.ENDC}")
                 exit()
             port = valid_regions[region]
             df9 = getattr(ApiDB(), f"query_api_db_{region}")(
@@ -1273,7 +1275,7 @@ gcloud config set project {aname}
         region_ports = {
             'us': 9000,
             'eu': 9001,
-            'ap': 9002,
+            'au': 9002,
             'in': 9003,
             'gov': 9004
         }
@@ -1282,7 +1284,7 @@ gcloud config set project {aname}
             region = get.geo_search[0]
             if region not in region_ports:
                 print(
-                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, ap, in, gov{bcolors.ENDC}")
+                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, au, in, gov{bcolors.ENDC}")
                 exit()
             port = region_ports[region]
             query = f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50"""
@@ -1329,12 +1331,12 @@ gcloud config set project {aname}
         fargate_asset_id_search = getattr(args, "res_fargate")[1]
         jwt_token_search = getattr(args, "res_fargate")[2]
 
-        region = {'us': 9000, 'eu': 9001, 'ap': 9002, 'in': 9003, 'gov': 9004}
+        region = {'us': 9000, 'eu': 9001, 'au': 9002, 'in': 9003, 'gov': 9004}
 
         if get.geo_search:
             if get.geo_search[0] not in region:
                 print(
-                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, ap, in, gov" + bcolors.ENDC)
+                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au, in, gov" + bcolors.ENDC)
                 exit()
             else:
                 port = region[get.geo_search[0]]
@@ -1520,7 +1522,6 @@ def tunnel():
             for line in main_tunnel.stdout:
                 if search_val in line:
                     print(bcolors.OKBLUE + "Established tunnel to production environment US" + bcolors.ENDC)
-                    time.sleep(1)
                     break
 
     else:
@@ -1530,7 +1531,6 @@ def tunnel():
         for line in main_tunnel.stdout:
             if search_val in line:
                 print(bcolors.OKBLUE + "Established tunnel to production environment US" + bcolors.ENDC)
-                time.sleep(1)
                 break
 
     need_tunnel_9001 = subprocess.Popen("netstat -an | grep 9001", shell=True, executable="/bin/zsh",
@@ -1560,7 +1560,6 @@ def tunnel():
             for line in eu_tunnel.stdout:
                 if search_val in line:
                     print(bcolors.OKBLUE + "Established tunnel to production environment EU" + bcolors.ENDC)
-                    time.sleep(1)
                     break
     else:
         eu_tunnel = subprocess.Popen("aws_rds_tunnel production 9001 --region eu-central-1", shell=True,
@@ -1569,7 +1568,6 @@ def tunnel():
         for line in eu_tunnel.stdout:
             if search_val in line:
                 print(bcolors.OKBLUE + "Established tunnel to production environment EU" + bcolors.ENDC)
-                time.sleep(1)
                 break
 
     need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
@@ -1599,7 +1597,6 @@ def tunnel():
             for line in ap_tunnel.stdout:
                 if search_val in line:
                     print(bcolors.OKBLUE + "Established tunnel to production environment AU" + bcolors.ENDC)
-                    time.sleep(1)
                     break
     else:
         ap_tunnel = subprocess.Popen("aws_rds_tunnel production 9002 --region ap-southeast-2", shell=True,
@@ -1608,7 +1605,6 @@ def tunnel():
         for line in ap_tunnel.stdout:
             if search_val in line:
                 print(bcolors.OKBLUE + "Established tunnel to production environment AU" + bcolors.ENDC)
-                time.sleep(1)
                 break
 
     need_tunnel_9003 = subprocess.Popen("lsof -i :9003", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
@@ -1638,7 +1634,6 @@ def tunnel():
             for line in in_tunnel.stdout:
                 if search_val in line:
                     print(bcolors.OKBLUE + "Established tunnel to production environment India" + bcolors.ENDC)
-                    time.sleep(1)
                     break
     else:
         in_tunnel = subprocess.Popen("aws_rds_tunnel production 9003 --region ap-south-1", shell=True,
@@ -1647,7 +1642,6 @@ def tunnel():
         for line in in_tunnel.stdout:
             if search_val in line:
                 print(bcolors.OKBLUE + "Established tunnel to production environment India" + bcolors.ENDC)
-                time.sleep(1)
                 break
 
     need_tunnel_9004 = subprocess.Popen("lsof -i :9004", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
@@ -1677,7 +1671,6 @@ def tunnel():
             for line in gov_tunnel.stdout:
                 if search_val in line:
                     print(bcolors.OKBLUE + "Established tunnel to production environment GOV" + bcolors.ENDC + "\n")
-                    time.sleep(1)
                     break
     else:
         gov_tunnel = subprocess.Popen("aws_rds_tunnel production-gov 9004 --region us-gov-west-1", shell=True,
@@ -1686,7 +1679,6 @@ def tunnel():
         for line in gov_tunnel.stdout:
             if search_val in line:
                 print(bcolors.OKBLUE + "Established tunnel to production environment GOV" + bcolors.ENDC + "\n")
-                time.sleep(1)
                 break
     confirm_tunel()
 
@@ -1723,26 +1715,31 @@ def tunnel_specific(port, env, localhost, region):
             kill_pid_1 = subprocess.Popen(f"kill -9 {pid_1}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
                                           stderr=subprocess.STDOUT)
             out_pid_1, err = kill_pid_1.communicate()
-            main_tunnel = subprocess.Popen(f"aws_rds_tunnel production {port} --region {region}", shell=True, executable="/bin/zsh",
+            if port == '9004':
+                main_tunnel = subprocess.Popen(f"aws_rds_tunnel production-gov {port} --region {region}", shell=True, executable="/bin/zsh",
+                                           stdout=subprocess.PIPE)
+            else:
+                main_tunnel = subprocess.Popen(f"aws_rds_tunnel production {port} --region {region}", shell=True, executable="/bin/zsh",
                                            stdout=subprocess.PIPE)
             search_val = f"localhost:{port}".encode()
             for line in main_tunnel.stdout:
                 if search_val in line:
                     print(bcolors.OKBLUE + f"Established tunnel to production environment {env}" + bcolors.ENDC)
-                    # time.sleep(1)
                     break
 
     else:
-        main_tunnel = subprocess.Popen(f"aws_rds_tunnel production {port} --region {region}", shell=True, executable="/bin/zsh",
-                                       stdout=subprocess.PIPE)
+        if port == '9004':
+            main_tunnel = subprocess.Popen(f"aws_rds_tunnel production-gov {port} --region {region}", shell=True, executable="/bin/zsh",
+                                           stdout=subprocess.PIPE)
+        else:
+            main_tunnel = subprocess.Popen(f"aws_rds_tunnel production {port} --region {region}", shell=True, executable="/bin/zsh",
+                                           stdout=subprocess.PIPE)
         search_val = f"localhost:{port}".encode()
         for line in main_tunnel.stdout:
             if search_val in line:
                 print(bcolors.OKBLUE + f"Established tunnel to production environment {env}" + bcolors.ENDC)
-                time.sleep(1)
                 break
     confirm_tunel_specific(port, localhost)
-
 
 def confirm_tunel():
     # make sure all tunnels are up and running
@@ -1754,7 +1751,6 @@ def confirm_tunel():
         need_tunnel_9000 = subprocess.Popen("lsof -i :9000", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
         need_tunnel_out, err = need_tunnel_9000.communicate()
-        time.sleep(1)
 
     need_tunnel_9001 = subprocess.Popen("lsof -i :9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
                                         stderr=subprocess.STDOUT)
@@ -1764,7 +1760,6 @@ def confirm_tunel():
         need_tunnel_9001 = subprocess.Popen("lsof -i :9001", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
         need_tunnel_out, err = need_tunnel_9001.communicate()
-        time.sleep(1)
 
     need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
                                         stderr=subprocess.STDOUT)
@@ -1774,7 +1769,6 @@ def confirm_tunel():
         need_tunnel_9002 = subprocess.Popen("lsof -i :9002", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
         need_tunnel_out, err = need_tunnel_9002.communicate()
-        time.sleep(1)
 
     need_tunnel_9003 = subprocess.Popen("lsof -i :9003", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
                                         stderr=subprocess.STDOUT)
@@ -1784,7 +1778,6 @@ def confirm_tunel():
         need_tunnel_9003 = subprocess.Popen("lsof -i :9003", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
         need_tunnel_out, err = need_tunnel_9003.communicate()
-        time.sleep(1)
 
     need_tunnel_9004 = subprocess.Popen("lsof -i :9004", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
                                         stderr=subprocess.STDOUT)
@@ -1794,7 +1787,6 @@ def confirm_tunel():
         need_tunnel_9004 = subprocess.Popen("lsof -i :9004", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT)
         need_tunnel_out, err = need_tunnel_9004.communicate()
-        time.sleep(1)
 
 
 def confirm_tunel_specific(port, localhost):
@@ -1807,7 +1799,6 @@ def confirm_tunel_specific(port, localhost):
         need_tunnel = subprocess.Popen(f"lsof -i :{port}", shell=True, executable="/bin/zsh", stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT)
         need_tunnel_out, err = need_tunnel.communicate()
-        # time.sleep(1)
 
 
 def garbage():
