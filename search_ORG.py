@@ -55,18 +55,18 @@ class get:
     parser.add_argument("-gcp_conf",
                         help="Provide gcp_config data using the GCP Project name, in order to use gcloud cli", nargs=1,
                         metavar=('provider_id'))
-    parser.add_argument("-res_col",
-                        help="Provide the next values <provider_id asset_id jwt-token> to create a Reserve Collector",
-                        nargs=3, metavar=('provider_id', 'asset_id', 'jwt-token'))
-    parser.add_argument("-res_s3",
-                        help="Provide the next values <provider_id bucket_name jwt-token> to create a S3 Bucket Reserve Collector",
-                        nargs=3, metavar=('provider_id', 'bucket_name', 'jwt-token'))
-    parser.add_argument("-res_fargate",
-                        help="Provide the next values <provider_id fargate_asset_id jwt-token> to create a Fargate Cluster Reserve Collector",
-                        nargs=3, metavar=('provider_id', 'fargate_asset_id', 'jwt-token'))
-    parser.add_argument("-res_containerimage",
-                        help="Provide the next values <provider_id image_id jwt-token> to create a Reserve Collector",
-                        nargs=3, metavar=('provider_id', 'image_id', 'jwt-token'))
+    # parser.add_argument("-res_col",
+    #                     help="Provide the next values <provider_id asset_id jwt-token> to create a Reserve Collector",
+    #                     nargs=3, metavar=('provider_id', 'asset_id', 'jwt-token'))
+    # parser.add_argument("-res_s3",
+    #                     help="Provide the next values <provider_id bucket_name jwt-token> to create a S3 Bucket Reserve Collector",
+    #                     nargs=3, metavar=('provider_id', 'bucket_name', 'jwt-token'))
+    # parser.add_argument("-res_fargate",
+    #                     help="Provide the next values <provider_id fargate_asset_id jwt-token> to create a Fargate Cluster Reserve Collector",
+    #                     nargs=3, metavar=('provider_id', 'fargate_asset_id', 'jwt-token'))
+    # parser.add_argument("-res_containerimage",
+    #                     help="Provide the next values <provider_id image_id jwt-token> to create a Reserve Collector",
+    #                     nargs=3, metavar=('provider_id', 'image_id', 'jwt-token'))
     # parser.add_argument("-allow_reg", help="Checking Allowed regions - using devenv_customer_access", nargs=1, metavar=('profile'))
     parser.add_argument("-allow_reg", help="Checking Allowed regions - using devenv_customer_access",
                         action='store_true')
@@ -754,7 +754,7 @@ class options:
                     port = geo_port_map.get(get.geo_search[0]) if get.geo_search else None
                     query = f"""select api_organization.name as "organization_name", api_cloudaccount.name as "Account_Name", api_cloudaccount.cloud_provider_id as "cloud_provider_id", gcp_service_account from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where lower(cloud_provider_id) like '%{provider_id_k8s}%' limit 50"""
                     if port:
-                        df8 = ApiDB().query_api_db(
+                        df8 = getattr(ApiDB(), f"query_api_db_{region_code}")(
                             query=query,
                             port=port
                         )
@@ -793,7 +793,7 @@ class options:
                     port = geo_port_map.get(get.geo_search[0]) if get.geo_search else None
                     query = f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name, api_cloudaccount.id as CloudAccount_id, api_cloudaccount.organization_id, api_cloudaccount.aws_role_arn, api_cloudaccount.role_external_id, api_cloudaccount.created_time, api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_k8s}' limit 50"""
                     if port:
-                        df7 = ApiDB().query_api_db(
+                        df7 = getattr(ApiDB(), f"query_api_db_{region_code}")(
                             query=query,
                             port=port
                         )
@@ -1140,237 +1140,237 @@ gcloud config set project {aname}
 """
         )
 
-    def res_col():
-        parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
-        parser.add_argument("-res_col",
-                            help="Provide the next values <provider_id asset_id jwt-token> to create a Reserve Collector",
-                            nargs=3, metavar=('provider_id', 'asset_id', 'jwt-token'))
-        parser.add_argument('--region', nargs=argparse.REMAINDER)
-        args = parser.parse_args()
+    # def res_col():
+    #     parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
+    #     parser.add_argument("-res_col",
+    #                         help="Provide the next values <provider_id asset_id jwt-token> to create a Reserve Collector",
+    #                         nargs=3, metavar=('provider_id', 'asset_id', 'jwt-token'))
+    #     parser.add_argument('--region', nargs=argparse.REMAINDER)
+    #     args = parser.parse_args()
+    #
+    #     provider_id_search = getattr(args, "res_col")[0]
+    #     asset_id_search = getattr(args, "res_col")[1]
+    #     jwt_token_search = getattr(args, "res_col")[2]
+    #
+    #     valid_regions = {
+    #         'us': {'func': ApiDB().query_api_db_us, 'port': 9000},
+    #         'eu': {'func': ApiDB().query_api_db_eu, 'port': 9001},
+    #         'au': {'func': ApiDB().query_api_db_au, 'port': 9002},
+    #         'in': {'func': ApiDB().query_api_db_in, 'port': 9003},
+    #         'gov': {'func': ApiDB().query_api_db_gov, 'port': 9004}
+    #     }
+    #
+    #     if get.geo_search is not None:
+    #         region = get.geo_search[0]
+    #         if region not in valid_regions:
+    #             print("The argument --region can only be: us, eu, au, in, gov")
+    #             exit()
+    #         df9 = valid_regions[region]['func'](
+    #             query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
+    #             port=valid_regions[region]['port'])
+    #     else:
+    #         df9 = ApiDB().query_all_regions(
+    #             query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""")
+    #
+    #     if df9.empty:
+    #         print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
+    #         exit()
+    #     else:
+    #         bashCommand = "whoami"
+    #         process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+    #         login_user, error = process.communicate()
+    #         login_user_str = str(login_user).replace("\\n", "").replace("b'", "").replace("'", "")
+    #
+    #         account_id = df9["CloudAccount_id"].to_string(index=False)
+    #         csv(df9)
+    #
+    #         scan_mode = df9["scan_inaccount"].to_string(index=False)
+    #
+    #         df_csv = pd.read_csv(f'{var.csv_file}', skipinitialspace=True)
+    #         if get.geo_search == None:
+    #             location = df_csv.region.to_string(index=False)
+    #         else:
+    #             location = get.geo_search[0]
+    #         print(bcolors.OKCYAN + "Please open a new iTerm and run next output:" + bcolors.ENDC + "\n")
+    #         if scan_mode == "True":
+    #             login_user_str = "Orca_automated"
+    #             print(bcolors.FAIL + "PLEASE BE AWARE THIS IS InAccount" + bcolors.ENDC + "\n")
+    #         print(
+    #             f"prp utils/api_scripts/api.py scan --api-host https://app.{location}.orcasecurity.io --jwt-tokens {jwt_token_search} --customer-account-id {account_id} --assets-to-scan {asset_id_search} --reserve-collectors {login_user_str}_collector_with_vpn --reserve-collector-backconnect-server utils/api_scripts/vpnconnect.json")
+    #         os.remove(var.csv_file)
+    #         exit()
 
-        provider_id_search = getattr(args, "res_col")[0]
-        asset_id_search = getattr(args, "res_col")[1]
-        jwt_token_search = getattr(args, "res_col")[2]
+    # def res_containerimage():
+    #     parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
+    #     parser.add_argument("-res_containerimage",
+    #                         help="Provide the next values <provider_id image_id jwt-token> to create a Reserve Collector",
+    #                         nargs=3, metavar=('provider_id', 'image_id', 'jwt-token'))
+    #     parser.add_argument('--region', nargs=argparse.REMAINDER)
+    #     args = parser.parse_args()
+    #
+    #     provider_id_search = getattr(args, "res_containerimage")[0]
+    #     image_id_search = getattr(args, "res_containerimage")[1]
+    #     jwt_token_search = getattr(args, "res_containerimage")[2]
+    #
+    #     valid_regions = {
+    #         'us': 9000,
+    #         'eu': 9001,
+    #         'au': 9002,
+    #         'in': 9003,
+    #         'gov': 9004
+    #     }
+    #
+    #     if get.geo_search is not None:
+    #         region = get.geo_search[0]
+    #         if region not in valid_regions:
+    #             print(
+    #                 f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, au, in, gov{bcolors.ENDC}")
+    #             exit()
+    #         port = valid_regions[region]
+    #         df9 = getattr(ApiDB(), f"query_api_db_{region}")(
+    #             query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name, api_cloudaccount.id as "CloudAccount_id", api_cloudaccount.organization_id, api_cloudaccount.aws_role_arn, api_cloudaccount.role_external_id, api_cloudaccount.scan_inaccount, api_cloudaccount.created_time, api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
+    #             port=port)
+    #     else:
+    #         df9 = ApiDB().query_all_regions(
+    #             query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name, api_cloudaccount.id as "CloudAccount_id", api_cloudaccount.organization_id, api_cloudaccount.aws_role_arn, api_cloudaccount.role_external_id, api_cloudaccount.scan_inaccount, api_cloudaccount.created_time, api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""")
+    #
+    #     if df9.empty:
+    #         print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
+    #         exit()
+    #     else:
+    #         bashCommand = "whoami"
+    #         process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+    #         login_user, error = process.communicate()
+    #         login_user_str = str(login_user).replace("\\n", "").replace("b'", "").replace("'", "")
+    #         account_id = df9["CloudAccount_id"].to_string(index=False)
+    #         csv(df9)
+    #         scan_mode = df9["scan_inaccount"].to_string(index=False)
+    #
+    #         df_csv = pd.read_csv(f'{var.csv_file}', skipinitialspace=True)
+    #         if get.geo_search == None:
+    #             location = df_csv.region.to_string(index=False)
+    #         else:
+    #             location = get.geo_search[0]
+    #         print(bcolors.OKCYAN + "Please open a new iTerm and run next output:" + bcolors.ENDC + "\n")
+    #         if scan_mode == "True":
+    #             login_user_str = "Orca_automated"
+    #             print(bcolors.FAIL + "PLEASE BE AWARE THIS IS InAccount" + bcolors.ENDC + "\n")
+    #         print(
+    #             f"prp utils/api_scripts/api.py scan --api-host https://app.{location}.orcasecurity.io --jwt-tokens {jwt_token_search} --customer-account-id {account_id} --reserve-container-image-collectors {image_id_search} --reserve-collectors {login_user_str}_collector_with_vpn --reserve-collector-backconnect-server utils/api_scripts/vpnconnect.json")
+    #         os.remove(var.csv_file)
+    #         exit()
 
-        valid_regions = {
-            'us': {'func': ApiDB().query_api_db_us, 'port': 9000},
-            'eu': {'func': ApiDB().query_api_db_eu, 'port': 9001},
-            'au': {'func': ApiDB().query_api_db_au, 'port': 9002},
-            'in': {'func': ApiDB().query_api_db_in, 'port': 9003},
-            'gov': {'func': ApiDB().query_api_db_gov, 'port': 9004}
-        }
+    # def res_s3():
+    #     parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
+    #     parser.add_argument("-res_s3",
+    #                         help="Provide the next values <provider_id bucket_name jwt-token> to create a S3 Bucket Reserve Collector",
+    #                         nargs=3, metavar=('provider_id', 'bucket_name', 'jwt-token'))
+    #     parser.add_argument('--region', nargs=argparse.REMAINDER)
+    #     args = parser.parse_args()
+    #
+    #     provider_id_search = getattr(args, "res_s3")[0]
+    #     bucket_name_search = getattr(args, "res_s3")[1]
+    #     jwt_token_search = getattr(args, "res_s3")[2]
+    #
+    #     region_ports = {
+    #         'us': 9000,
+    #         'eu': 9001,
+    #         'au': 9002,
+    #         'in': 9003,
+    #         'gov': 9004
+    #     }
+    #
+    #     if get.geo_search is not None:
+    #         region = get.geo_search[0]
+    #         if region not in region_ports:
+    #             print(
+    #                 f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, au, in, gov{bcolors.ENDC}")
+    #             exit()
+    #         port = region_ports[region]
+    #         query = f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50"""
+    #         df9 = getattr(ApiDB(), f"query_api_db_{region}")(query=query, port=port)
+    #     else:
+    #         df9 = ApiDB().query_all_regions(
+    #             query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50"""
+    #         )
+    #
+    #     if df9.empty:
+    #         print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
+    #         exit()
+    #     else:
+    #         bashCommand = "whoami"
+    #         process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+    #         login_user, error = process.communicate()
+    #         login_user_str = str(login_user).replace("\\n", "").replace("b'", "").replace("'", "")
+    #         account_id = df9["CloudAccount_id"].to_string(index=False)
+    #         csv(df9)
+    #         scan_mode = df9["scan_inaccount"].to_string(index=False)
+    #
+    #         df_csv = pd.read_csv(f'{var.csv_file}', skipinitialspace=True)
+    #         if get.geo_search == None:
+    #             location = df_csv.region.to_string(index=False)
+    #         else:
+    #             location = get.geo_search[0]
+    #         print(bcolors.OKCYAN + "Please open a new iTerm and run next output:" + bcolors.ENDC + "\n")
+    #         if scan_mode == "True":
+    #             login_user_str = "Orca_automated"
+    #             print(bcolors.FAIL + "PLEASE BE AWARE THIS IS InAccount" + bcolors.ENDC + "\n")
+    #         print(
+    #             f"prp utils/api_scripts/api.py scan --api-host https://app.{location}.orcasecurity.io --jwt-tokens {jwt_token_search} --customer-account-id {account_id} --buckets-to-scan {bucket_name_search} --reserve-s3-collectors {login_user_str}_collector_with_vpn --reserve-collector-backconnect-server utils/api_scripts/vpnconnect.json")
+    #         os.remove(var.csv_file)
+    #         exit()
 
-        if get.geo_search is not None:
-            region = get.geo_search[0]
-            if region not in valid_regions:
-                print("The argument --region can only be: us, eu, au, in, gov")
-                exit()
-            df9 = valid_regions[region]['func'](
-                query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                port=valid_regions[region]['port'])
-        else:
-            df9 = ApiDB().query_all_regions(
-                query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""")
-
-        if df9.empty:
-            print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
-            exit()
-        else:
-            bashCommand = "whoami"
-            process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
-            login_user, error = process.communicate()
-            login_user_str = str(login_user).replace("\\n", "").replace("b'", "").replace("'", "")
-
-            account_id = df9["CloudAccount_id"].to_string(index=False)
-            csv(df9)
-
-            scan_mode = df9["scan_inaccount"].to_string(index=False)
-
-            df_csv = pd.read_csv(f'{var.csv_file}', skipinitialspace=True)
-            if get.geo_search == None:
-                location = df_csv.region.to_string(index=False)
-            else:
-                location = get.geo_search[0]
-            print(bcolors.OKCYAN + "Please open a new iTerm and run next output:" + bcolors.ENDC + "\n")
-            if scan_mode == "True":
-                login_user_str = "Orca_automated"
-                print(bcolors.FAIL + "PLEASE BE AWARE THIS IS InAccount" + bcolors.ENDC + "\n")
-            print(
-                f"prp utils/api_scripts/api.py scan --api-host https://app.{location}.orcasecurity.io --jwt-tokens {jwt_token_search} --customer-account-id {account_id} --assets-to-scan {asset_id_search} --reserve-collectors {login_user_str}_collector_with_vpn --reserve-collector-backconnect-server utils/api_scripts/vpnconnect.json")
-            os.remove(var.csv_file)
-            exit()
-
-    def res_containerimage():
-        parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
-        parser.add_argument("-res_containerimage",
-                            help="Provide the next values <provider_id image_id jwt-token> to create a Reserve Collector",
-                            nargs=3, metavar=('provider_id', 'image_id', 'jwt-token'))
-        parser.add_argument('--region', nargs=argparse.REMAINDER)
-        args = parser.parse_args()
-
-        provider_id_search = getattr(args, "res_containerimage")[0]
-        image_id_search = getattr(args, "res_containerimage")[1]
-        jwt_token_search = getattr(args, "res_containerimage")[2]
-
-        valid_regions = {
-            'us': 9000,
-            'eu': 9001,
-            'au': 9002,
-            'in': 9003,
-            'gov': 9004
-        }
-
-        if get.geo_search is not None:
-            region = get.geo_search[0]
-            if region not in valid_regions:
-                print(
-                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, au, in, gov{bcolors.ENDC}")
-                exit()
-            port = valid_regions[region]
-            df9 = getattr(ApiDB(), f"query_api_db_{region}")(
-                query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name, api_cloudaccount.id as "CloudAccount_id", api_cloudaccount.organization_id, api_cloudaccount.aws_role_arn, api_cloudaccount.role_external_id, api_cloudaccount.scan_inaccount, api_cloudaccount.created_time, api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""",
-                port=port)
-        else:
-            df9 = ApiDB().query_all_regions(
-                query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name, api_cloudaccount.id as "CloudAccount_id", api_cloudaccount.organization_id, api_cloudaccount.aws_role_arn, api_cloudaccount.role_external_id, api_cloudaccount.scan_inaccount, api_cloudaccount.created_time, api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""")
-
-        if df9.empty:
-            print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
-            exit()
-        else:
-            bashCommand = "whoami"
-            process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
-            login_user, error = process.communicate()
-            login_user_str = str(login_user).replace("\\n", "").replace("b'", "").replace("'", "")
-            account_id = df9["CloudAccount_id"].to_string(index=False)
-            csv(df9)
-            scan_mode = df9["scan_inaccount"].to_string(index=False)
-
-            df_csv = pd.read_csv(f'{var.csv_file}', skipinitialspace=True)
-            if get.geo_search == None:
-                location = df_csv.region.to_string(index=False)
-            else:
-                location = get.geo_search[0]
-            print(bcolors.OKCYAN + "Please open a new iTerm and run next output:" + bcolors.ENDC + "\n")
-            if scan_mode == "True":
-                login_user_str = "Orca_automated"
-                print(bcolors.FAIL + "PLEASE BE AWARE THIS IS InAccount" + bcolors.ENDC + "\n")
-            print(
-                f"prp utils/api_scripts/api.py scan --api-host https://app.{location}.orcasecurity.io --jwt-tokens {jwt_token_search} --customer-account-id {account_id} --reserve-container-image-collectors {image_id_search} --reserve-collectors {login_user_str}_collector_with_vpn --reserve-collector-backconnect-server utils/api_scripts/vpnconnect.json")
-            os.remove(var.csv_file)
-            exit()
-
-    def res_s3():
-        parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
-        parser.add_argument("-res_s3",
-                            help="Provide the next values <provider_id bucket_name jwt-token> to create a S3 Bucket Reserve Collector",
-                            nargs=3, metavar=('provider_id', 'bucket_name', 'jwt-token'))
-        parser.add_argument('--region', nargs=argparse.REMAINDER)
-        args = parser.parse_args()
-
-        provider_id_search = getattr(args, "res_s3")[0]
-        bucket_name_search = getattr(args, "res_s3")[1]
-        jwt_token_search = getattr(args, "res_s3")[2]
-
-        region_ports = {
-            'us': 9000,
-            'eu': 9001,
-            'au': 9002,
-            'in': 9003,
-            'gov': 9004
-        }
-
-        if get.geo_search is not None:
-            region = get.geo_search[0]
-            if region not in region_ports:
-                print(
-                    f"The argument {bcolors.FAIL}--region{bcolors.ENDC} can only be: {bcolors.FAIL}us, eu, au, in, gov{bcolors.ENDC}")
-                exit()
-            port = region_ports[region]
-            query = f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50"""
-            df9 = getattr(ApiDB(), f"query_api_db_{region}")(query=query, port=port)
-        else:
-            df9 = ApiDB().query_all_regions(
-                query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50"""
-            )
-
-        if df9.empty:
-            print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
-            exit()
-        else:
-            bashCommand = "whoami"
-            process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
-            login_user, error = process.communicate()
-            login_user_str = str(login_user).replace("\\n", "").replace("b'", "").replace("'", "")
-            account_id = df9["CloudAccount_id"].to_string(index=False)
-            csv(df9)
-            scan_mode = df9["scan_inaccount"].to_string(index=False)
-
-            df_csv = pd.read_csv(f'{var.csv_file}', skipinitialspace=True)
-            if get.geo_search == None:
-                location = df_csv.region.to_string(index=False)
-            else:
-                location = get.geo_search[0]
-            print(bcolors.OKCYAN + "Please open a new iTerm and run next output:" + bcolors.ENDC + "\n")
-            if scan_mode == "True":
-                login_user_str = "Orca_automated"
-                print(bcolors.FAIL + "PLEASE BE AWARE THIS IS InAccount" + bcolors.ENDC + "\n")
-            print(
-                f"prp utils/api_scripts/api.py scan --api-host https://app.{location}.orcasecurity.io --jwt-tokens {jwt_token_search} --customer-account-id {account_id} --buckets-to-scan {bucket_name_search} --reserve-s3-collectors {login_user_str}_collector_with_vpn --reserve-collector-backconnect-server utils/api_scripts/vpnconnect.json")
-            os.remove(var.csv_file)
-            exit()
-
-    def res_fargate():
-        parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
-        parser.add_argument("-res_fargate",
-                            help="Provide the next values <provider_id fargate_asset_id jwt-token> to create a Fargate Cluster Reserve Collector",
-                            nargs=3, metavar=('provider_id', 'fargate_asset_id', 'jwt-token'))
-        parser.add_argument('--region', nargs=argparse.REMAINDER)
-        args = parser.parse_args()
-        provider_id_search = getattr(args, "res_fargate")[0]
-        fargate_asset_id_search = getattr(args, "res_fargate")[1]
-        jwt_token_search = getattr(args, "res_fargate")[2]
-
-        region = {'us': 9000, 'eu': 9001, 'au': 9002, 'in': 9003, 'gov': 9004}
-
-        if get.geo_search:
-            if get.geo_search[0] not in region:
-                print(
-                    "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au, in, gov" + bcolors.ENDC)
-                exit()
-            else:
-                port = region[get.geo_search[0]]
-                query = f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50"""
-                df9 = getattr(ApiDB(), f"query_api_db_{get.geo_search[0]}")(query=query, port=port)
-        else:
-            df9 = ApiDB().query_all_regions(
-                query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""")
-
-        if df9.empty:
-            print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
-            exit()
-        else:
-            bashCommand = "whoami"
-            process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
-            login_user, error = process.communicate()
-            login_user_str = str(login_user).replace("\\n", "").replace("b'", "").replace("'", "")
-            account_id = df9["CloudAccount_id"].to_string(index=False)
-            csv(df9)
-            scan_mode = df9["scan_inaccount"].to_string(index=False)
-
-            df_csv = pd.read_csv(f'{var.csv_file}', skipinitialspace=True)
-            if get.geo_search == None:
-                location = df_csv.region.to_string(index=False)
-            else:
-                location = get.geo_search[0]
-            print(bcolors.OKCYAN + "Please open a new iTerm and run next output:" + bcolors.ENDC + "\n")
-            if scan_mode == "True":
-                login_user_str = "Orca_automated"
-                print(bcolors.FAIL + "PLEASE BE AWARE THIS IS InAccount" + bcolors.ENDC + "\n")
-            print(
-                f"prp utils/api_scripts/api.py scan --api-host https://app.{location}.orcasecurity.io --jwt-tokens {jwt_token_search} --customer-account-id {account_id} --assets-to-scan {fargate_asset_id_search} --reserve-fargate-collectors {login_user_str}_collector_with_vpn --reserve-collector-backconnect-server utils/api_scripts/vpnconnect.json")
-            os.remove(var.csv_file)
-            exit()
+    # def res_fargate():
+    #     parser = argparse.ArgumentParser(prog="search_ORG.py", description="Orca App for Support")
+    #     parser.add_argument("-res_fargate",
+    #                         help="Provide the next values <provider_id fargate_asset_id jwt-token> to create a Fargate Cluster Reserve Collector",
+    #                         nargs=3, metavar=('provider_id', 'fargate_asset_id', 'jwt-token'))
+    #     parser.add_argument('--region', nargs=argparse.REMAINDER)
+    #     args = parser.parse_args()
+    #     provider_id_search = getattr(args, "res_fargate")[0]
+    #     fargate_asset_id_search = getattr(args, "res_fargate")[1]
+    #     jwt_token_search = getattr(args, "res_fargate")[2]
+    #
+    #     region = {'us': 9000, 'eu': 9001, 'au': 9002, 'in': 9003, 'gov': 9004}
+    #
+    #     if get.geo_search:
+    #         if get.geo_search[0] not in region:
+    #             print(
+    #                 "The argument " + bcolors.FAIL + '--region' + bcolors.ENDC + " can only be: " + bcolors.FAIL + "us, eu, au, in, gov" + bcolors.ENDC)
+    #             exit()
+    #         else:
+    #             port = region[get.geo_search[0]]
+    #             query = f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50"""
+    #             df9 = getattr(ApiDB(), f"query_api_db_{get.geo_search[0]}")(query=query, port=port)
+    #     else:
+    #         df9 = ApiDB().query_all_regions(
+    #             query=f"""select api_organization.name as "organization_name", api_cloudaccount.name as Account_Name,api_cloudaccount.id as "CloudAccount_id",api_cloudaccount.organization_id,api_cloudaccount.aws_role_arn,api_cloudaccount.role_external_id,api_cloudaccount.scan_inaccount,api_cloudaccount.created_time,api_cloudaccount.status_info from api_cloudaccount join api_organization on api_organization.id = api_cloudaccount.organization_id where (cloud_provider_id) = '{provider_id_search}' limit 50""")
+    #
+    #     if df9.empty:
+    #         print(bcolors.FAIL + "No Data Found" + bcolors.ENDC)
+    #         exit()
+    #     else:
+    #         bashCommand = "whoami"
+    #         process = subprocess.Popen(bashCommand, shell=True, executable="/bin/zsh", stdout=subprocess.PIPE)
+    #         login_user, error = process.communicate()
+    #         login_user_str = str(login_user).replace("\\n", "").replace("b'", "").replace("'", "")
+    #         account_id = df9["CloudAccount_id"].to_string(index=False)
+    #         csv(df9)
+    #         scan_mode = df9["scan_inaccount"].to_string(index=False)
+    #
+    #         df_csv = pd.read_csv(f'{var.csv_file}', skipinitialspace=True)
+    #         if get.geo_search == None:
+    #             location = df_csv.region.to_string(index=False)
+    #         else:
+    #             location = get.geo_search[0]
+    #         print(bcolors.OKCYAN + "Please open a new iTerm and run next output:" + bcolors.ENDC + "\n")
+    #         if scan_mode == "True":
+    #             login_user_str = "Orca_automated"
+    #             print(bcolors.FAIL + "PLEASE BE AWARE THIS IS InAccount" + bcolors.ENDC + "\n")
+    #         print(
+    #             f"prp utils/api_scripts/api.py scan --api-host https://app.{location}.orcasecurity.io --jwt-tokens {jwt_token_search} --customer-account-id {account_id} --assets-to-scan {fargate_asset_id_search} --reserve-fargate-collectors {login_user_str}_collector_with_vpn --reserve-collector-backconnect-server utils/api_scripts/vpnconnect.json")
+    #         os.remove(var.csv_file)
+    #         exit()
 
     def allow_reg():
         # profile_str = get.profile_search[0]
@@ -1852,8 +1852,8 @@ if __name__ == "__main__":
     # sys.tracebacklimit = 0
 
     garbage()
-    if get.args.res_containerimage:
-        options.res_containerimage()
+    # if get.args.res_containerimage:
+    #     options.res_containerimage()
 
     if get.args.get_permission:
         options.get_permission()
@@ -1900,11 +1900,11 @@ if __name__ == "__main__":
     if get.args.gcp_conf:
         options.gcp_conf()
 
-    if get.args.res_col:
-        options.res_col()
+    # if get.args.res_col:
+    #     options.res_col()
+    #
+    # if get.args.res_s3:
+    #     options.res_s3()
 
-    if get.args.res_s3:
-        options.res_s3()
-
-    if get.args.res_fargate:
-        options.res_fargate()
+    # if get.args.res_fargate:
+    #     options.res_fargate()
