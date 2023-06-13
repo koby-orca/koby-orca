@@ -742,7 +742,7 @@ class options:
                 location = out['location'][line]
                 cloud_provider_out = out['cluster_type'][line]
 
-                if cloud_provider_out == 'gke' or cloud_provider_out == 'k8s':
+                if cloud_provider_out == 'gke':
                     cloud_provider = 'gcp'
                     geo_port_map = {
                         'us': 9000,
@@ -781,7 +781,7 @@ class options:
                     print(
                         f"opp {get.orca_folder}/sensors/services/kubernator/local_kubernator.py --cloud-provider {cloud_provider} --cluster-name {cluster_name} gke --gcp-project-id {provider_id_k8s} --gcp-service-account '{service_account}")
 
-                elif cloud_provider_out == 'eks':
+                elif cloud_provider_out == 'eks' or cloud_provider_out == 'k8s':
                     cloud_provider = 'aws'
                     geo_port_map = {
                         'us': 9000,
