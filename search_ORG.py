@@ -1051,25 +1051,26 @@ class options:
             # print(bcolors.OKGREEN + f"You can try running the command with --org <organization name> flag" + bcolors.ENDC)
             exit()
         else:
+            org_id = df7.organization_id[0]
             org_name = df7.organization_name[0]
             if get.geo_search is not None:
                 geo_to_port = {'us': 9000, 'eu': 9001, 'au': 9002, 'in': 9003, 'gov': 9004}
                 port = geo_to_port.get(get.geo_search[0])
                 if port is not None:
-                    query = f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where name like '%{org_name}%' limit 50"""
+                    query = f"""select role_arn,role_external_id from api_awscustomersubscanneraccount where organization_id = '{org_id}' limit 50"""
                     df8 = getattr(ApiDB(), f"query_api_db_{region}")(query=query, port=port)
             else:
                 df8 = ApiDB().query_all_regions(
-                    query=f"""select scanneraccount_role_arn,scanneraccount_role_external_id from api_organization where name like '%{org_name}%' limit 50""")
+                    query=f"""select role_arn,role_external_id from api_awscustomersubscanneraccount where organization_id = '{org_id}' limit 50""")
 
-            result = df8["scanneraccount_role_arn"].to_string()[5:]
+            result = df8["role_arn"].to_string()[5:]
             if len(df8.index) < 2 and result == 'None':
                 print(f"""{bcolors.FAIL}We didnt find any In-Account Service Account {provider_str}
 For normal AWS account please use dev-customer-access via Jacques
 More info can be found https://orcasecurity.atlassian.net/wiki/spaces/MVP/pages/2808840282/Customer+Dev+Access+AWS {bcolors.ENDC}""")
             else:
-                aws_role_arn = df8["scanneraccount_role_arn"][0]
-                role_external_id = df8["scanneraccount_role_external_id"][0]
+                aws_role_arn = df8["role_arn"][0]
+                role_external_id = df8["role_external_id"][0]
                 print(f"""{bcolors.OKCYAN}We found In-Account Service Account:{bcolors.ENDC}
 
 [profile {org_name}_InAccount_{aws_role_arn.split(":")[4]}]
