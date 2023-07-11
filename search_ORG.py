@@ -1113,9 +1113,10 @@ More info can be found https://orcasecurity.atlassian.net/wiki/spaces/MVP/pages/
                 bcolors.FAIL + f"Could not found the Org Name for Account: {bcolors.OKCYAN}{gcp_str}{bcolors.ENDC}" + bcolors.ENDC)
             exit()
         else:
-            oname = df8["organization_name"].to_string(index=False)
-            aname = df8["cloud_provider_id"].to_string(index=False)
+            oname = df8["organization_name"][0]
+            aname = df8["cloud_provider_id"].str.replace(r'\s+-\s+\w+', '', regex=True).str.strip().values[0]
             json = get.home_folder + "/.gcp/" + f"{oname}" + "_" + f"{aname}" + ".json"
+
             replace_df8 = df8.replace(r"\r+|\n+|\t+", "", regex=True)
 
             for i in replace_df8["gcp_service_account"]:
