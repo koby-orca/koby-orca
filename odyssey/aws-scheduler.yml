@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Dispatch the Odyssey GitHub Actions workflow every five minutes.
+Description: Dispatch the Odyssey GitHub Actions workflow every three minutes.
 
 Parameters:
   GitHubTokenSecretArn:
@@ -117,12 +117,12 @@ Resources:
                 Action: lambda:InvokeFunction
                 Resource: !GetAtt DispatcherFunction.Arn
 
-  FiveMinuteSchedule:
+  ThreeMinuteSchedule:
     Type: AWS::Scheduler::Schedule
     Properties:
-      Name: koby-odyssey-every-five-minutes
-      Description: Dispatch the Odyssey watcher on GitHub every five minutes.
-      ScheduleExpression: rate(5 minutes)
+      Name: koby-odyssey-every-three-minutes
+      Description: Dispatch the Odyssey watcher on GitHub every three minutes.
+      ScheduleExpression: rate(3 minutes)
       FlexibleTimeWindow:
         Mode: "OFF"
       State: ENABLED
@@ -138,4 +138,4 @@ Outputs:
   DispatcherFunctionName:
     Value: !Ref DispatcherFunction
   ScheduleName:
-    Value: !Ref FiveMinuteSchedule
+    Value: !Ref ThreeMinuteSchedule
