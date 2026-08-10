@@ -1,6 +1,13 @@
 name: Check Odyssey IMAX 70mm
 
 on:
+  # A workflow-file push also acts as a bootstrap/resync trigger when GitHub's
+  # scheduler has not registered a newly created cron workflow yet.
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/check-odyssey.yml"
   schedule:
     # GitHub cron is UTC. Offset the five-minute cadence from round boundaries
     # because scheduled workflows can be delayed during periods of high load.
