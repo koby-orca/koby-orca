@@ -2,8 +2,8 @@ name: Check Odyssey IMAX 70mm
 
 on:
   schedule:
-    # GitHub cron is UTC. Offset from minute 0 to reduce scheduler congestion.
-    - cron: "7,37 * * * *"
+    # GitHub cron is UTC. Five minutes is the shortest supported interval.
+    - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
       test_slack:
