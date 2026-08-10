@@ -309,6 +309,12 @@ def main() -> int:
 
 if __name__ == "__main__":
     try:
+        if "--test-slack" in sys.argv:
+            notify(
+                "✅ Odyssey watcher connected",
+                "GitHub Actions can send alerts to this Slack conversation.",
+            )
+            raise SystemExit(0)
         raise SystemExit(main())
     except Exception as exc:
         log(f"ERROR: {exc}")

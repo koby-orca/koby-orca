@@ -5,6 +5,12 @@ on:
     # GitHub cron is UTC. Offset from minute 0 to reduce scheduler congestion.
     - cron: "7,37 * * * *"
   workflow_dispatch:
+    inputs:
+      test_slack:
+        description: Send a Slack test message before checking Cinema City
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -36,6 +42,10 @@ jobs:
             echo "::error::Repository secret SLACK_BOT_TOKEN is not configured."
             exit 1
           fi
+
+      - name: Send Slack test notification
+        if: ${{ inputs.test_slack }}
+        run: python odyssey/check_odyssey.py --test-slack
 
       - name: Check Cinema City
         run: python odyssey/check_odyssey.py
