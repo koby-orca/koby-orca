@@ -40,10 +40,12 @@ TARGET_DATES = {
 # Ratios manually verified against the Cinema City seat map. Unknown ratios are
 # deliberately reported as unknown rather than guessed.
 KNOWN_SEAT_COUNTS = {
-    0.0156: 0,
     0.0234: 2,
     0.0286: 2,
 }
+
+ZERO_SEAT_MIN_BASIS_POINTS = 100
+ZERO_SEAT_MAX_BASIS_POINTS = 200
 
 
 def log(message: str) -> None:
@@ -162,7 +164,11 @@ def get_seat_count(event: dict[str, Any]) -> int | None:
     ratio = event.get("availabilityRatio")
     if ratio is None:
         return None
-    return KNOWN_SEAT_COUNTS.get(round(float(ratio), 4))
+    ratio = float(ratio)
+    basis_points = round(ratio * 10_000)
+    if ZERO_SEAT_MIN_BASIS_POINTS <= basis_points <= ZERO_SEAT_MAX_BASIS_POINTS:
+        return 0
+    return KNOWN_SEAT_COUNTS.get(round(ratio, 4))
 
 
 def status_text(event: dict[str, Any]) -> str:

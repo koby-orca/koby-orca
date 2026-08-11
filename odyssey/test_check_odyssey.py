@@ -33,6 +33,13 @@ class OdysseyWatcherTests(unittest.TestCase):
         }
         self.assertIs(watcher.get_best_event([sold_out, available]), available)
 
+    def test_100_to_200_basis_points_means_zero_seats(self):
+        for ratio in (0.0100, 0.0156, 0.0182, 0.0200):
+            with self.subTest(ratio=ratio):
+                event = {"availabilityRatio": ratio}
+                self.assertEqual(watcher.get_seat_count(event), 0)
+                self.assertEqual(watcher.status_text(event), "❌ 0 seats")
+
     def test_target_notification_is_deduplicated(self):
         event = {
             "id": 123,
