@@ -1,5 +1,11 @@
 # Odyssey watcher
 
+**Status: stopped.** The EventBridge schedule
+`koby-odyssey-every-three-minutes` is `DISABLED`, so the workflow is no longer
+dispatched. Re-enable by setting `State: ENABLED` in
+[`aws-scheduler.yml`](aws-scheduler.yml) and updating the CloudFormation stack
+(or `aws scheduler update-schedule ... --state ENABLED`).
+
 The watcher runs in GitHub Actions. An Amazon EventBridge Scheduler resource in
 `us-east-1` dispatches the workflow every three minutes because GitHub's native
 cron scheduler did not reliably enqueue the newly created workflow.

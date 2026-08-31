@@ -125,7 +125,7 @@ Resources:
       ScheduleExpression: rate(3 minutes)
       FlexibleTimeWindow:
         Mode: "OFF"
-      State: ENABLED
+      State: DISABLED
       Target:
         Arn: !GetAtt DispatcherFunction.Arn
         RoleArn: !GetAtt SchedulerRole.Arn
